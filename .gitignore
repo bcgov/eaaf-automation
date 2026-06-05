@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# user documentation (local only)
+plan.md
+Commands.md
+prompts.md
+testapi.md

@@ -1,3 +1,5 @@
+
+#PROMPT 1
 Create a full-stack local-first Enterprise Architecture Assessment application using:
 
 - Next.js 15 (App Router)
@@ -187,3 +189,4 @@ Generate:
 - Working routing between steps
 
 The end result must be a fully functional local application that runs end-to-end with SQLite persistence and a working multi-step EA workflow.
+
