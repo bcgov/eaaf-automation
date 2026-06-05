@@ -1,0 +1,93 @@
+graph TB
+    subgraph Browser["Browser (Client)"]
+        HP["Home Page\n/\nAssessment List + Create Form"]
+        AP["Assessment Page\n/assessment/[id]\nStep Nav + Questions + Context"]
+        BCP["BusinessContextPanel\nView / Edit metadata"]
+        RR["RecommendationReport\nGenerate + Display result"]
+    end
+
+    subgraph NextJS["Next.js API Layer (Server)"]
+        A1["GET /api/assessments\nList all assessments"]
+        A2["POST /api/assessment/create\nCreate with business context"]
+        A3["GET /api/assessment/[id]\nFetch full assessment"]
+        A4["PUT /api/assessment/[id]\nUpdate business context/status"]
+        A5["POST /api/assessment/[id]/next\nAdvance step"]
+        A6["POST /api/assessment/[id]/previous\nGo back a step"]
+        A7["GET /api/questions?step=\nFetch questions for step"]
+        A8["GET /api/responses?assessmentId=\nFetch all responses"]
+        A9["POST /api/response/save\nUpsert single response"]
+        A10["POST /api/assessment/[id]/recommend\nRun engine + save result"]
+        A11["GET /api/assessment/[id]/recommend\nFetch saved recommendation"]
+        A12["GET /api/steps\nList all 5 steps"]
+    end
+
+    subgraph Engine["Recommendation Engine\nlib/recommendation/engine.ts"]
+        E1["generateRecommendation(assessmentId)\n1. Fetch all responses from DB\n2. Run keyword signal matching\n3. Score 4 platforms\n4. Normalise to 0-100\n5. Build rationale from responses"]
+        E2["saveRecommendation()\nUpsert to recommendations table\nMark assessment completed"]
+        E3["NO AI CALL ❌\nPure rule-based scoring\nKeyword → platform weight map"]
+    end
+
+    subgraph DB["SQLite Database\ndata/app.db"]
+        T1[("assessments\nid, name, status, current_step_id\nbusiness_context, business_goals\nbusiness_drivers, business_requirement\nbusiness_goal, business_driver")]
+        T2[("assessment_steps\nkey, name, sequence")]
+        T3[("Factor / SubFactor\nhierarchy tables")]
+        T4[("questions\nquestion_key, question_text\nstep_key, factorId, subFactorId")]
+        T5[("responses\nassessment_id, question_id\nresponse_text")]
+        T6[("recommendations\nassessment_id, platform_recommendation\nconfidence_score, rationale\nrisks, alternatives")]
+    end
+
+    subgraph SeedFiles["Seed Data (git-ignored local files)"]
+        SF1["seed-data/seed-questions.local.json\n5 steps, 10 factors, 16 sub-factors, 21 questions"]
+        SF2["seed-data/seed-tpl.local.json\nTPL business context + 14 responses\n+ Salesforce recommendation (hardcoded 92%)"]
+    end
+
+    subgraph Init["DB Init\nscripts/init-db.ts"]
+        I1["Creates schema\nRuns migrations\nSeeds hierarchy\nSeeds TPL pilot"]
+    end
+
+    %% Browser ↔ API
+    HP -->|"fetch /api/assessments"| A1
+    HP -->|"POST name, desc, business_*"| A2
+    AP -->|"fetch assessment + responses + steps"| A3
+    AP -->|"PUT business_context, goals, drivers"| A4
+    AP -->|"POST (advance step)"| A5
+    AP -->|"POST (go back)"| A6
+    AP -->|"fetch ?step=ARCHITECTURE"| A7
+    AP -->|"fetch ?assessmentId=N"| A8
+    AP -->|"POST questionKey + value on blur"| A9
+    RR -->|"POST (trigger engine)"| A10
+    RR -->|"GET (load existing)"| A11
+
+    %% API ↔ DB
+    A1 --> T1
+    A2 -->|"INSERT name, business_*"| T1
+    A3 --> T1
+    A4 -->|"UPDATE business_context etc"| T1
+    A5 -->|"UPDATE current_step_id"| T1
+    A7 --> T4
+    A8 -->|"JOIN responses + questions"| T5
+    A9 -->|"UPSERT response_text"| T5
+    A10 --> E1
+    A11 --> T6
+    A12 --> T2
+
+    %% Engine ↔ DB
+    E1 -->|"SELECT responses JOIN questions"| T5
+    E1 --> E2
+    E2 -->|"DELETE + INSERT recommendation"| T6
+    E2 -->|"UPDATE status=completed"| T1
+    E3 -.->|"part of engine"| E1
+
+    %% Seed ↔ DB
+    SF1 -->|"loaded by seed-data-loader.ts"| I1
+    SF2 -->|"loaded by seed-data-loader.ts"| I1
+    I1 --> T1
+    I1 --> T2
+    I1 --> T3
+    I1 --> T4
+    I1 --> T5
+    I1 --> T6
+
+    %% Component composition
+    AP --- BCP
+    AP --- RR

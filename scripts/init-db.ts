@@ -1,4 +1,6 @@
 import db from "../lib/db/db";
+import { seedEaafHierarchy } from "./seed-questions.ts";
+import { seedTPLAssessment } from "./seed-tpl.ts";
 
 const initializeDatabase = () => {
   console.log("Initializing database...");
@@ -9,7 +11,13 @@ const initializeDatabase = () => {
       name TEXT NOT NULL,
       description TEXT,
       status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'in_progress', 'completed', 'archived')),
-      current_step_id INTEGER,
+      current_step_id TEXT,
+      business_context TEXT,
+      business_goals TEXT,
+      business_drivers TEXT,
+      business_requirement TEXT,
+      business_goal TEXT,
+      business_driver TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       completed_at DATETIME
@@ -23,6 +31,26 @@ const initializeDatabase = () => {
       description TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS "Factor" (
+      id TEXT PRIMARY KEY,
+      stepKey TEXT NOT NULL,
+      factorKey TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      description TEXT,
+      displayOrder INTEGER,
+      FOREIGN KEY (stepKey) REFERENCES assessment_steps(key)
+    );
+
+    CREATE TABLE IF NOT EXISTS "SubFactor" (
+      id TEXT PRIMARY KEY,
+      factorId TEXT NOT NULL,
+      subFactorKey TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      description TEXT,
+      displayOrder INTEGER,
+      FOREIGN KEY (factorId) REFERENCES "Factor"(id)
+    );
+
     CREATE TABLE IF NOT EXISTS questions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       step_id INTEGER NOT NULL,
@@ -32,6 +60,12 @@ const initializeDatabase = () => {
       help_text TEXT,
       input_type TEXT DEFAULT 'free_text',
       sequence INTEGER NOT NULL,
+      step_key TEXT,
+      response_type TEXT,
+      factorId TEXT,
+      subFactorId TEXT,
+      FOREIGN KEY (factorId) REFERENCES "Factor"(id),
+      FOREIGN KEY (subFactorId) REFERENCES "SubFactor"(id),
       FOREIGN KEY (step_id) REFERENCES assessment_steps(id)
     );
 
@@ -96,56 +130,69 @@ const initializeDatabase = () => {
     db.exec("ALTER TABLE questions ADD COLUMN response_type TEXT");
   }
 
-  // Seed assessment steps
-  const steps = [
-    { key: "ARCHITECTURE", name: "Architecture Assessment", sequence: 1, desc: "Assess current and target architecture" },
-    { key: "CLOUD", name: "Cloud Assessment", sequence: 2, desc: "Evaluate cloud readiness and strategy" },
-    { key: "PLATFORM", name: "Platform Assessment", sequence: 3, desc: "Identify required platforms and tools" },
-    { key: "BUSINESS_OPS", name: "Business & Operations Assessment", sequence: 4, desc: "Understand business operations and constraints" },
-  ];
-
-  for (const step of steps) {
-    db.prepare(
-      `INSERT OR IGNORE INTO assessment_steps (key, name, sequence, description) VALUES (?, ?, ?, ?)`
-    ).run(step.key, step.name, step.sequence, step.desc);
+  if (!hasColumn("questions", "factorId")) {
+    db.exec("ALTER TABLE questions ADD COLUMN factorId TEXT");
   }
 
-  // Seed questions per step
-  const questions = [
-    // Architecture
-    { stepKey: "ARCHITECTURE", qkey: "Q001", factor: "business_capability_alignment", text: "Does the solution align with an approved business capability?", type: "free_text", seq: 1 },
-    { stepKey: "ARCHITECTURE", qkey: "Q002", factor: "architecture_patterns", text: "What architecture patterns does your organization follow?", type: "free_text", seq: 2 },
-    // Cloud
-    { stepKey: "CLOUD", qkey: "Q003", factor: "cloud_strategy", text: "What is your cloud adoption strategy (cloud-first, hybrid, on-prem)?", type: "free_text", seq: 1 },
-    { stepKey: "CLOUD", qkey: "Q004", factor: "data_residency", text: "What are your data residency and compliance requirements?", type: "free_text", seq: 2 },
-    // Platform
-    { stepKey: "PLATFORM", qkey: "Q005", factor: "case_management", text: "Do you need case management capabilities?", type: "free_text", seq: 1 },
-    { stepKey: "PLATFORM", qkey: "Q006", factor: "it_operations", text: "What IT operations functions are critical?", type: "free_text", seq: 2 },
-    // Business & Ops
-    { stepKey: "BUSINESS_OPS", qkey: "Q007", factor: "user_base", text: "How many concurrent users will the platform support?", type: "free_text", seq: 1 },
-    { stepKey: "BUSINESS_OPS", qkey: "Q008", factor: "integration_needs", text: "What systems does this platform need to integrate with?", type: "free_text", seq: 2 },
-  ];
+  if (!hasColumn("questions", "subFactorId")) {
+    db.exec("ALTER TABLE questions ADD COLUMN subFactorId TEXT");
+  }
 
-  const insertQuestion = db.prepare(`
-    INSERT INTO questions (step_id, question_key, factor, question_text, input_type, sequence, step_key, response_type)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(question_key) DO UPDATE SET
-      factor = excluded.factor,
-      question_text = excluded.question_text,
-      input_type = excluded.input_type,
-      sequence = excluded.sequence
+  if (!hasColumn("assessments", "business_context")) {
+    db.exec("ALTER TABLE assessments ADD COLUMN business_context TEXT");
+  }
+
+  if (!hasColumn("assessments", "business_goals")) {
+    db.exec("ALTER TABLE assessments ADD COLUMN business_goals TEXT");
+  }
+
+  if (!hasColumn("assessments", "business_drivers")) {
+    db.exec("ALTER TABLE assessments ADD COLUMN business_drivers TEXT");
+  }
+
+  if (!hasColumn("assessments", "business_requirement")) {
+    db.exec("ALTER TABLE assessments ADD COLUMN business_requirement TEXT");
+  }
+
+  if (!hasColumn("assessments", "business_goal")) {
+    db.exec("ALTER TABLE assessments ADD COLUMN business_goal TEXT");
+  }
+
+  if (!hasColumn("assessments", "business_driver")) {
+    db.exec("ALTER TABLE assessments ADD COLUMN business_driver TEXT");
+  }
+
+  // Normalize legacy step keys to new hierarchy step keys
+  db.exec(`
+    UPDATE assessment_steps
+    SET key = 'CLOUD_ASSESSMENT', name = 'Cloud Assessment', sequence = 2
+    WHERE key = 'CLOUD'
+      AND NOT EXISTS (SELECT 1 FROM assessment_steps s WHERE s.key = 'CLOUD_ASSESSMENT');
+
+    UPDATE assessment_steps
+    SET key = 'PLATFORM_ASSESSMENT', name = 'Platform Assessment', sequence = 3
+    WHERE key = 'PLATFORM'
+      AND NOT EXISTS (SELECT 1 FROM assessment_steps s WHERE s.key = 'PLATFORM_ASSESSMENT');
+
+    UPDATE assessment_steps
+    SET key = 'OPERATIONAL_CONSIDERATIONS', name = 'Operational Considerations', sequence = 4
+    WHERE key = 'BUSINESS_OPS'
+      AND NOT EXISTS (SELECT 1 FROM assessment_steps s WHERE s.key = 'OPERATIONAL_CONSIDERATIONS');
+
+    UPDATE assessments SET current_step_id = 'CLOUD_ASSESSMENT' WHERE current_step_id = 'CLOUD';
+    UPDATE assessments SET current_step_id = 'PLATFORM_ASSESSMENT' WHERE current_step_id = 'PLATFORM';
+    UPDATE assessments SET current_step_id = 'OPERATIONAL_CONSIDERATIONS' WHERE current_step_id = 'BUSINESS_OPS';
   `);
 
-  for (const q of questions) {
-    const step = db.prepare(`SELECT id FROM assessment_steps WHERE key = ?`).get(q.stepKey) as { id: number } | undefined;
-    if (step) {
-      insertQuestion.run(step.id, q.qkey, q.factor, q.text, q.type, q.seq, q.stepKey, q.type);
-    }
-  }
+  const seedResult = seedEaafHierarchy(db);
 
   console.log("✓ Database tables created successfully");
-  console.log(`✓ Seeded ${steps.length} assessment steps`);
-  console.log(`✓ Seeded ${questions.length} questions`);
+  console.log(`✓ Seeded ${seedResult.stepCount} assessment steps`);
+  console.log(`✓ Seeded ${seedResult.factorCount} factors`);
+  console.log(`✓ Seeded ${seedResult.subFactorCount} sub-factors`);
+  console.log(`✓ Seeded ${seedResult.questionCount} questions`);
+
+  seedTPLAssessment();
 };
 
 initializeDatabase();

@@ -1,8 +1,19 @@
 import db from "@/lib/db/db";
 
-export type StepKey = "ARCHITECTURE" | "CLOUD" | "PLATFORM" | "BUSINESS_OPS";
+export type StepKey =
+  | "ARCHITECTURE"
+  | "CLOUD_ASSESSMENT"
+  | "PLATFORM_ASSESSMENT"
+  | "OPERATIONAL_CONSIDERATIONS"
+  | "FINAL_RECOMMENDATION";
 
-const STEP_ORDER: StepKey[] = ["ARCHITECTURE", "CLOUD", "PLATFORM", "BUSINESS_OPS"];
+const STEP_ORDER: StepKey[] = [
+  "ARCHITECTURE",
+  "CLOUD_ASSESSMENT",
+  "PLATFORM_ASSESSMENT",
+  "OPERATIONAL_CONSIDERATIONS",
+  "FINAL_RECOMMENDATION",
+];
 
 export const getStepIndex = (stepKey: StepKey): number => {
   return STEP_ORDER.indexOf(stepKey);

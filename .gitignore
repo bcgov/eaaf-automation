@@ -45,3 +45,17 @@ plan.md
 Commands.md
 prompts.md
 testapi.md
+
+# prompt/questionnaire files (local only)
+Prompt*.md
+prompt*.md
+
+# debug and verification scripts (development only)
+scripts/verify-*.ts
+scripts/debug-*.ts
+
+# local markdown files (development only)
+localmd/
+
+# local seed data (sensitive - .local.json only; .example.json is committed)
+seed-data/*.local.json

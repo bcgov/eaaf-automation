@@ -1,0 +1,6 @@
+graph LR
+    subgraph Future["Future AI Integration Points"]
+        P1["1. POST /api/assessment/recommend\nReplace rule engine with\nOpenAI structured completion\npassing all responses as context"]
+        P2["2. Embedding generation\nOn assessment completion\ncreate vector embeddings\nof responses for similarity search"]
+        P3["3. Rationale generation\nAI-written rationale text\ninstead of template-built string"]
+    end
