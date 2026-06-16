@@ -94,6 +94,27 @@
   flex-shrink: 0;
 }
 
+.stepButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.stepButton:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.stepButton:focus-visible {
+  outline: 2px solid #0070f3;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
 .stepBubble {
   width: 30px;
   height: 30px;

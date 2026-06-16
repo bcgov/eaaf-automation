@@ -59,3 +59,16 @@ localmd/
 
 # local seed data (sensitive - .local.json only; .example.json is committed)
 seed-data/*.local.json
+seed-data/historical-assessments.json
+
+# python local environment artifacts
+local-embedding-service/.venv/
+**/.venv/
+__pycache__/
+*.pyc
+
+# sqlite runtime artifacts
+data/app.db
+eaaf.db
+data/app.db-wal
+data/app.db-shm

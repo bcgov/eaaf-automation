@@ -6,11 +6,14 @@ import AssessmentForm from "@/components/AssessmentForm";
 import { CreateAssessmentRequest, Assessment } from "@/types/assessment";
 import styles from "./page.module.css";
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 export default function HomePage() {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   // Load assessments on mount
   React.useEffect(() => {
@@ -20,7 +23,7 @@ export default function HomePage() {
   const loadAssessments = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/assessments");
+      const res = await fetch(`${BASE_PATH}/api/assessments`);
       const data = await res.json();
       setAssessments(data);
     } catch (err) {
@@ -33,7 +36,7 @@ export default function HomePage() {
   const handleCreateAssessment = async (formData: CreateAssessmentRequest) => {
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/assessment/create", {
+      const res = await fetch(`${BASE_PATH}/api/assessment/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -45,10 +48,37 @@ export default function HomePage() {
 
       const data = await res.json();
       // Redirect to the new assessment
-      window.location.href = `/assessment/${data.id}`;
+      window.location.href = `${BASE_PATH}/assessment/${data.id}`;
     } catch (err) {
       console.error("Failed to create assessment:", err);
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteAssessment = async (assessment: Assessment) => {
+    const confirmed = window.confirm(
+      `Delete assessment \"${assessment.name}\" and all related data (responses, recommendations, history, findings, embeddings)?`
+    );
+
+    if (!confirmed) return;
+
+    setDeletingId(assessment.id);
+    try {
+      const res = await fetch(`${BASE_PATH}/api/assessment/${assessment.id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const details = await res.json().catch(() => null);
+        throw new Error(details?.error ?? "Failed to delete assessment");
+      }
+
+      await loadAssessments();
+    } catch (err) {
+      console.error("Failed to delete assessment:", err);
+      window.alert("Failed to delete assessment. See console for details.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -89,6 +119,9 @@ export default function HomePage() {
         >
           + Create New Assessment
         </button>
+        <Link href="/health" className={styles.healthLink}>
+          System Health Dashboard
+        </Link>
       </div>
 
       <div className={styles.content}>
@@ -112,38 +145,55 @@ export default function HomePage() {
             <h2>Your Assessments ({assessments.length})</h2>
             <div className={styles.grid}>
               {assessments.map((assessment) => (
-                <Link
-                  key={assessment.id}
-                  href={`/assessment/${assessment.id}`}
-                  className={styles.assessmentCard}
-                >
-                  <div className={styles.cardHeader}>
-                    <h3>{assessment.name}</h3>
-                    <span className={`${styles.badge} ${styles[assessment.status]}`}>
-                      {assessment.status}
-                    </span>
-                  </div>
-
-                  {assessment.description && (
-                    <p className={styles.description}>{assessment.description}</p>
-                  )}
-
-                  {assessment.business_requirement && (
-                    <div className={styles.cardInfo}>
-                      <strong>Requirement:</strong> {assessment.business_requirement.substring(0, 100)}
-                      {assessment.business_requirement.length > 100 ? "..." : ""}
+                <article key={assessment.id} className={styles.assessmentCard}>
+                  <Link
+                    href={`/assessment/${assessment.id}`}
+                    className={styles.assessmentCardLink}
+                  >
+                    <div className={styles.cardHeader}>
+                      <h3>{assessment.name}</h3>
+                      <span className={`${styles.badge} ${styles[assessment.status]}`}>
+                        {assessment.status}
+                      </span>
                     </div>
-                  )}
 
-                  <div className={styles.cardFooter}>
-                    <span className={styles.step}>
-                      Step: <strong>{assessment.current_step_id.replace(/_/g, " ")}</strong>
-                    </span>
-                    <span className={styles.date}>
-                      {new Date(assessment.created_at).toLocaleDateString()}
-                    </span>
+                    {assessment.description && (
+                      <p className={styles.description}>{assessment.description}</p>
+                    )}
+
+                    {assessment.business_requirement && (
+                      <div className={styles.cardInfo}>
+                        <strong>Requirement:</strong> {assessment.business_requirement.substring(0, 100)}
+                        {assessment.business_requirement.length > 100 ? "..." : ""}
+                      </div>
+                    )}
+
+                    {assessment.recommendation && (
+                      <div className={styles.recommendation}>
+                        <strong>Final Recommendation:</strong> {assessment.recommendation}
+                      </div>
+                    )}
+
+                    <div className={styles.cardFooter}>
+                      <span className={styles.step}>
+                        Step: <strong>{assessment.current_step_id ? assessment.current_step_id.replace(/_/g, " ") : "not started"}</strong>
+                      </span>
+                      <span className={styles.date}>
+                        {new Date(assessment.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </Link>
+
+                  <div className={styles.cardActions}>
+                    <button
+                      className={styles.deleteButton}
+                      onClick={() => handleDeleteAssessment(assessment)}
+                      disabled={deletingId === assessment.id}
+                    >
+                      {deletingId === assessment.id ? "Deleting..." : "Delete Assessment"}
+                    </button>
                   </div>
-                </Link>
+                </article>
               ))}
             </div>
           </div>

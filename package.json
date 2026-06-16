@@ -6,7 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:init": "npx tsx scripts/init-db.ts",
+    "db:seed:assessments": "npx tsx scripts/seed-historical-assessments.ts",
+    "db:seed:historical": "npx tsx scripts/seed-historical-assessments.ts",
+    "export:assessments": "node scripts/export-historical-assessments.js",
+    "export:historical": "node scripts/export-historical-assessments.js",
+    "embeddings:service": "local-embedding-service\\.venv\\Scripts\\python local-embedding-service/app.py",
+    "embeddings:backfill": "node scripts/backfill-baseline-and-embeddings.js"
   },
   "dependencies": {
     "better-sqlite3": "^12.10.0",

@@ -22,4 +22,25 @@ db.pragma("journal_mode = WAL");
 db.pragma("synchronous = NORMAL");
 db.pragma("foreign_keys = ON");
 
+function tableExists(tableName: string): boolean {
+  const row = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`).get(tableName);
+  return !!row;
+}
+
+function addColumnIfMissing(tableName: string, columnDefinition: string): void {
+  if (!tableExists(tableName)) return;
+  try {
+    db.prepare(`ALTER TABLE ${tableName} ADD COLUMN ${columnDefinition}`).run();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("duplicate column name")) {
+      throw error;
+    }
+  }
+}
+
+addColumnIfMissing("recommendations", "architect_approval TEXT");
+addColumnIfMissing("recommendations", "architect_approval_reason TEXT");
+addColumnIfMissing("recommendations", "architect_approval_recorded_at DATETIME");
+
 export default db;

@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  basePath: "/eaaf-automation",
+  env: {
+    NEXT_PUBLIC_BASE_PATH: "/eaaf-automation",
+  },
 };
 
 export default nextConfig;

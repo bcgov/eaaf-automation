@@ -1,0 +1,316 @@
+.panel {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.toggleButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #6b7280;
+  padding: 0.25rem 0.5rem;
+}
+
+.toggleButton:hover {
+  color: #374151;
+}
+
+.loadingText,
+.emptyText {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.cardName {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.similarityBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+}
+
+.high {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.medium {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.low {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.cardMeta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.metaLabel {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.metaValue {
+  color: #1e293b;
+  margin-right: 0.5rem;
+}
+
+.excerpt {
+  font-size: 0.8rem;
+  color: #475569;
+  margin: 0.25rem 0 0;
+  line-height: 1.5;
+}
+
+.excerptLabel {
+  font-weight: 600;
+  color: #374151;
+}
+
+/* ─── Low-signal report ────────────────────────────────────────── */
+
+.caveatBanner {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  background: #fefce8;
+  border: 1px solid #fde047;
+  border-radius: 6px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.8rem;
+  color: #713f12;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.caveatIcon {
+  flex-shrink: 0;
+}
+
+.nudgeCard {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.1rem;
+}
+
+.nudgeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.nudgeLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #1d4ed8;
+}
+
+.lowConfBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+}
+
+.nudgePlatform {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin: 0.2rem 0 0.5rem;
+}
+
+.nudgeRationale {
+  font-size: 0.82rem;
+  color: #374151;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.semanticContextSection {
+  margin-bottom: 1.1rem;
+}
+
+.semanticContextText {
+  font-size: 0.82rem;
+  color: #475569;
+  margin: 0 0 0.65rem;
+  line-height: 1.5;
+}
+
+.profilesSection {
+  margin-top: 0.5rem;
+}
+
+.profilesHeading {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin: 0 0 0.6rem;
+}
+
+.profileCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.profileHighlighted {
+  border-color: #bfdbfe;
+}
+
+.profileToggle {
+  width: 100%;
+  background: #f9fafb;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  text-align: left;
+}
+
+.profileHighlighted .profileToggle {
+  background: #eff6ff;
+}
+
+.profileToggle:hover {
+  background: #f3f4f6;
+}
+
+.profileName {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+  flex: 1;
+}
+
+.nudgePill {
+  font-size: 0.7rem;
+  background: #2563eb;
+  color: #fff;
+  padding: 0.1rem 0.5rem;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+.profileChevron {
+  font-size: 0.65rem;
+  color: #9ca3af;
+}
+
+.profileBody {
+  padding: 0.75rem 1rem;
+  background: #fff;
+}
+
+.prosConsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.prosList h5,
+.consList h5 {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.prosHeading {
+  color: #166534;
+}
+
+.consHeading {
+  color: #9a3412;
+}
+
+.prosList ul,
+.consList ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.profileMeta {
+  font-size: 0.8rem;
+  color: #475569;
+  line-height: 1.6;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+@media (max-width: 640px) {
+  .prosConsRow {
+    grid-template-columns: 1fr;
+  }
+}

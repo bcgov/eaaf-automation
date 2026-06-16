@@ -1,6 +1,5 @@
 import db from "../lib/db/db";
 import { seedEaafHierarchy } from "./seed-questions.ts";
-import { seedTPLAssessment } from "./seed-tpl.ts";
 
 const initializeDatabase = () => {
   console.log("Initializing database...");
@@ -64,6 +63,7 @@ const initializeDatabase = () => {
       response_type TEXT,
       factorId TEXT,
       subFactorId TEXT,
+      FOREIGN KEY (step_key) REFERENCES assessment_steps(key),
       FOREIGN KEY (factorId) REFERENCES "Factor"(id),
       FOREIGN KEY (subFactorId) REFERENCES "SubFactor"(id),
       FOREIGN KEY (step_id) REFERENCES assessment_steps(id)
@@ -102,6 +102,9 @@ const initializeDatabase = () => {
       confidence_score INTEGER CHECK(confidence_score >= 0 AND confidence_score <= 100),
       risks TEXT,
       alternatives TEXT,
+      architect_approval TEXT,
+      architect_approval_reason TEXT,
+      architect_approval_recorded_at DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (assessment_id) REFERENCES assessments(id)
     );
@@ -113,6 +116,21 @@ const initializeDatabase = () => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (assessment_id) REFERENCES assessments(id)
     );
+
+    CREATE TABLE IF NOT EXISTS assessment_embeddings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      assessment_id INTEGER NOT NULL UNIQUE,
+      context_embedding TEXT NOT NULL,
+      embedding_model TEXT DEFAULT 'all-MiniLM-L6-v2',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (assessment_id) REFERENCES assessments(id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_factor_stepKey ON "Factor"(stepKey);
+    CREATE INDEX IF NOT EXISTS idx_subfactor_factorId ON "SubFactor"(factorId);
+    CREATE INDEX IF NOT EXISTS idx_questions_factorId ON questions(factorId);
+    CREATE INDEX IF NOT EXISTS idx_questions_subFactorId ON questions(subFactorId);
   `);
 
   const hasColumn = (tableName: string, columnName: string) => {
@@ -162,6 +180,18 @@ const initializeDatabase = () => {
     db.exec("ALTER TABLE assessments ADD COLUMN business_driver TEXT");
   }
 
+  if (!hasColumn("recommendations", "architect_approval")) {
+    db.exec("ALTER TABLE recommendations ADD COLUMN architect_approval TEXT");
+  }
+
+  if (!hasColumn("recommendations", "architect_approval_reason")) {
+    db.exec("ALTER TABLE recommendations ADD COLUMN architect_approval_reason TEXT");
+  }
+
+  if (!hasColumn("recommendations", "architect_approval_recorded_at")) {
+    db.exec("ALTER TABLE recommendations ADD COLUMN architect_approval_recorded_at DATETIME");
+  }
+
   // Normalize legacy step keys to new hierarchy step keys
   db.exec(`
     UPDATE assessment_steps
@@ -191,8 +221,6 @@ const initializeDatabase = () => {
   console.log(`✓ Seeded ${seedResult.factorCount} factors`);
   console.log(`✓ Seeded ${seedResult.subFactorCount} sub-factors`);
   console.log(`✓ Seeded ${seedResult.questionCount} questions`);
-
-  seedTPLAssessment();
 };
 
 initializeDatabase();

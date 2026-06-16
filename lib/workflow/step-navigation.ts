@@ -83,8 +83,9 @@ export const getAssessmentWithStep = (assessmentId: number) => {
     .get(assessmentId) as { id: number; name: string; status: string; current_step_id: string } | undefined;
 };
 
-export const advanceToNextStep = (assessmentId: number, currentStepKey: StepKey): StepKey | null => {
-  const nextStep = getNextStep(currentStepKey);
+export const advanceToNextStep = (assessmentId: number, currentStepKey: StepKey | null): StepKey | null => {
+  const resolvedStep = currentStepKey ?? STEP_ORDER[0];
+  const nextStep = getNextStep(resolvedStep);
   if (!nextStep) {
     return null;
   }

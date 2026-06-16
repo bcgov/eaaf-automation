@@ -10,6 +10,13 @@ export interface PlatformScore {
   reasons: string[];
 }
 
+export interface ScoringHit {
+  questionKey: string;
+  responseSnippet: string;
+  keywordMatched: string;
+  platformPoints: Partial<Record<Platform, number>>;
+}
+
 export interface RecommendationResult {
   platform: Platform;
   displayName: string;
@@ -18,6 +25,7 @@ export interface RecommendationResult {
   risks: string;
   alternatives: string;
   platformScores: PlatformScore[];
+  scoringHits: ScoringHit[];
 }
 
 // ─── Scoring signals ────────────────────────────────────────────────────────────
@@ -148,8 +156,18 @@ const SCORING_RULES: Record<string, Signal[]> = {
       scores: { MicrosoftPowerPlatform: 10, Salesforce: 5, ServiceNow: 3 },
     },
     {
+      keywords: ["lightweight", "simple", "basic"],
+      scores: { MicrosoftPowerPlatform: 8, Salesforce: 2, ServiceNow: 1 },
+    },
+    {
       keywords: ["not primary", "minimal", "pro developer"],
       scores: { Salesforce: 3, ServiceNow: 4 },
+    },
+  ],
+  PLAT_ORG_SIZE_001: [
+    {
+      keywords: ["5000", "5,000", "small organization", "limited scope", "simple requirements"],
+      scores: { MicrosoftPowerPlatform: 9, Salesforce: 1, ServiceNow: 0 },
     },
   ],
   PLAT_INT_001: [
@@ -158,8 +176,8 @@ const SCORING_RULES: Record<string, Signal[]> = {
       scores: { Salesforce: 9, ServiceNow: 6, MicrosoftPowerPlatform: 4 },
     },
     {
-      keywords: ["minimal integration", "simple", "few systems"],
-      scores: { MicrosoftPowerPlatform: 6, ServiceNow: 5, Salesforce: 3 },
+      keywords: ["minimal integration", "simple", "few systems", "lightweight integration"],
+      scores: { MicrosoftPowerPlatform: 8, ServiceNow: 4, Salesforce: 2 },
     },
   ],
   PLAT_INT_002: [
@@ -232,15 +250,140 @@ const SCORING_RULES: Record<string, Signal[]> = {
       scores: { Salesforce: 5, ServiceNow: 5, MicrosoftPowerPlatform: 5 },
     },
   ],
+
+  // ── METADATA SCORING (Business context, goals, drivers, requirement) ────────
+  META_Business_Context: [
+    {
+      keywords: ["itsm", "incident", "service desk", "service request", "problem management", "change control", "change management", "sla", "workflow automation"],
+      scores: { ServiceNow: 9, Salesforce: 2, MicrosoftPowerPlatform: 1 },
+    },
+    {
+      keywords: ["under 5000", "less than 5000", "small scope", "boutique", "limited", "lightweight", "simple", "internal staff"],
+      scores: { MicrosoftPowerPlatform: 8, Salesforce: 1 },
+    },
+    {
+      keywords: ["enterprise-wide", "complex", "deep integration", "crm"],
+      scores: { Salesforce: 6, ServiceNow: 4 },
+    },
+  ],
+  META_Business_Requirement: [
+    {
+      keywords: ["itsm", "incident", "service desk", "service request", "problem management", "change control", "change management", "sla", "workflow"],
+      scores: { ServiceNow: 10, Salesforce: 1, MicrosoftPowerPlatform: 1 },
+    },
+    {
+      keywords: ["under 5000", "less than 5000", "small scope", "boutique", "limited", "lightweight", "simple", "internal"],
+      scores: { MicrosoftPowerPlatform: 9, Salesforce: 0 },
+    },
+    {
+      keywords: ["complex crm", "case management", "deep integration"],
+      scores: { Salesforce: 7, ServiceNow: 5 },
+    },
+  ],
+  META_Business_Goals: [
+    {
+      keywords: ["incident management", "sla enforcement", "workflow automation", "service desk"],
+      scores: { ServiceNow: 8, Salesforce: 2 },
+    },
+    {
+      keywords: ["rapid deployment", "quick", "agile", "low cost"],
+      scores: { MicrosoftPowerPlatform: 8, Salesforce: 2 },
+    },
+    {
+      keywords: ["complex workflow", "case lifecycle", "mature ecosystem"],
+      scores: { Salesforce: 6, ServiceNow: 5 },
+    },
+  ],
+  META_Business_Drivers: [
+    {
+      keywords: ["sla compliance", "operational efficiency", "incident management", "workflow automation"],
+      scores: { ServiceNow: 8, Salesforce: 2 },
+    },
+    {
+      keywords: ["speed", "rapid", "cost reduction"],
+      scores: { MicrosoftPowerPlatform: 7, Salesforce: 1 },
+    },
+    {
+      keywords: ["enterprise standardization", "complex requirements"],
+      scores: { Salesforce: 6, ServiceNow: 5 },
+    },
+  ],
 };
 
 // ─── Platform display metadata ───────────────────────────────────────────────
 
-const PLATFORM_DISPLAY: Record<Platform, string> = {
+export const PLATFORM_DISPLAY: Record<Platform, string> = {
   Salesforce: "Salesforce (CRM + Case Management)",
   ServiceNow: "ServiceNow (ITSM + Workflow)",
-  MicrosoftPowerPlatform: "Microsoft Power Platform + Dynamics 365",
+  MicrosoftPowerPlatform: "Microsoft Power Platform",
   CustomBuild: "Custom Build",
+};
+
+export const PLATFORM_STRENGTHS: Record<Platform, string[]> = {
+  Salesforce: [
+    "Market-leading CRM and case management capabilities",
+    "Deep enterprise integration ecosystem (MuleSoft, APIs)",
+    "Mature BC Government and Canadian public sector deployment history",
+    "Robust RBAC, audit logging, and data governance controls",
+    "AppExchange ecosystem with pre-built accelerators",
+    "Strong support for complex case lifecycle management",
+  ],
+  ServiceNow: [
+    "Best-in-class ITSM and workflow automation",
+    "Proven for service desk, incident, and change management",
+    "Strong operational governance and SLA management",
+    "Now Platform extensibility for custom workflows",
+    "Enterprise-grade audit trail and compliance reporting",
+    "Broad Canadian public sector adoption for IT operations",
+  ],
+  MicrosoftPowerPlatform: [
+    "Included within existing BC Government M365 E3/E5 licences — no significant incremental cost",
+    "Rapid low-code application development for business teams",
+    "Native integration with Teams, SharePoint, and Azure AD",
+    "Power Automate for lightweight workflow orchestration",
+    "Suitable for lightweight and moderate workflow requirements",
+    "Familiar tooling for ministry staff already using M365",
+  ],
+  CustomBuild: [
+    "Full control over functionality, data model, and architecture",
+    "No vendor lock-in or licensing dependency",
+    "Can be tailored precisely to unique regulatory requirements",
+    "Potential for reuse across multiple ministry programs",
+    "Full ownership of IP and source code",
+  ],
+};
+
+export const PLATFORM_WEAKNESSES: Record<Platform, string[]> = {
+  Salesforce: [
+    "High per-user licensing cost — significant budget implication at scale",
+    "Requires dedicated Salesforce admin and developer skills",
+    "Complex integration with legacy provincial systems (EMPI, financial registries)",
+    "Customisation can accumulate technical debt if not governed",
+    "Vendor dependency for roadmap and pricing changes",
+  ],
+  ServiceNow: [
+    "Limited CRM depth — not designed for citizen or case-centric workflows",
+    "Significant implementation effort and specialist team required",
+    "High licensing cost, particularly for non-IT use cases",
+    "Overkill for lightweight or non-ITSM business problems",
+    "Requires dedicated ServiceNow platform expertise",
+  ],
+  MicrosoftPowerPlatform: [
+    "Governance challenges with citizen development at scale",
+    "Limited enterprise integration without premium connectors (additional cost)",
+    "Power Apps can become fragile or ungoverned without CoE toolkit",
+    "Advanced scenario licensing may be required for some capabilities",
+    "Less suited for complex case lifecycle management",
+    "Long-term viability of low-code solutions requires architectural oversight",
+  ],
+  CustomBuild: [
+    "High development cost and long delivery timeline",
+    "Long-term maintenance burden falls entirely on the ministry",
+    "Significant talent dependency — risk if key staff leave",
+    "No vendor roadmap, security patching, or product evolution",
+    "Rarely justified when commercial SaaS alternatives exist",
+    "Higher risk profile for complex integrations",
+  ],
 };
 
 const PLATFORM_RISKS: Record<Platform, string> = {
@@ -256,9 +399,9 @@ const PLATFORM_RISKS: Record<Platform, string> = {
 
 const PLATFORM_ALTERNATIVES: Record<Platform, string> = {
   Salesforce:
-    "ServiceNow for ITSM-heavy workloads; Microsoft Power Platform + Dynamics 365 for lower cost; Custom build for unique capability gaps",
+    "ServiceNow for ITSM-heavy workloads; Microsoft Power Platform for lower cost; Custom build for unique capability gaps",
   ServiceNow:
-    "Salesforce for CRM/case-centric use cases; Microsoft Dynamics 365 for lighter workflow needs",
+    "Salesforce for CRM/case-centric use cases; Microsoft Power Platform for lighter workflow needs",
   MicrosoftPowerPlatform:
     "Salesforce for enterprise CRM depth; ServiceNow for ITSM; Custom build if unique IP is required",
   CustomBuild:
@@ -271,7 +414,8 @@ function scoreResponse(
   questionKey: string,
   responseText: string,
   scores: Record<Platform, number>,
-  reasons: Record<Platform, string[]>
+  reasons: Record<Platform, string[]>,
+  hits: ScoringHit[]
 ): void {
   const rules = SCORING_RULES[questionKey];
   if (!rules) return;
@@ -279,16 +423,27 @@ function scoreResponse(
   const lowerResponse = responseText.toLowerCase();
 
   for (const rule of rules) {
-    const matched = rule.keywords.some((kw) => lowerResponse.includes(kw));
+    const matchedKw = rule.keywords.find((kw) => lowerResponse.includes(kw));
+    const matched = !!matchedKw;
     if (matched) {
+      const positivePoints: Partial<Record<Platform, number>> = {};
       for (const [platform, points] of Object.entries(rule.scores) as [Platform, number][]) {
         scores[platform] = (scores[platform] ?? 0) + points;
         if (points > 0) {
+          positivePoints[platform] = points;
           reasons[platform] = reasons[platform] ?? [];
           reasons[platform].push(
             `${questionKey} response signals "${rule.keywords[0]}" (${points > 0 ? "+" : ""}${points}pts)`
           );
         }
+      }
+      if (Object.keys(positivePoints).length > 0) {
+        hits.push({
+          questionKey,
+          responseSnippet: responseText.substring(0, 120) + (responseText.length > 120 ? "…" : ""),
+          keywordMatched: matchedKw!,
+          platformPoints: positivePoints,
+        });
       }
     }
   }
@@ -296,7 +451,6 @@ function scoreResponse(
 
 function normaliseScores(raw: Record<Platform, number>): Record<Platform, number> {
   const min = Math.min(...Object.values(raw));
-  // Shift everything so minimum is 0 (no negative totals)
   const shifted: Record<Platform, number> = {} as any;
   for (const [p, v] of Object.entries(raw) as [Platform, number][]) {
     shifted[p] = Math.max(0, v - Math.min(0, min));
@@ -304,11 +458,8 @@ function normaliseScores(raw: Record<Platform, number>): Record<Platform, number
 
   const max = Math.max(...Object.values(shifted));
   if (max === 0) {
-    // No signals — return equal scores
-    const platforms = Object.keys(shifted) as Platform[];
-    const equal = Math.round(100 / platforms.length);
     const result: Record<Platform, number> = {} as any;
-    for (const p of platforms) result[p] = equal;
+    for (const p of Object.keys(shifted) as Platform[]) result[p] = 0;
     return result;
   }
 
@@ -325,31 +476,33 @@ function buildRationale(
   responses: Record<string, string>,
   reasons: Record<Platform, string[]>
 ): string {
-  const topReasons = (reasons[winner] ?? []).slice(0, 5);
-
-  const crm = responses["PLAT_CRM_001"] ?? "";
-  const integration = responses["PLAT_INT_001"] ?? "";
-  const cloud = responses["CLOUD_SAAS_001"] ?? "";
+  const answeredCount = Object.values(responses).filter((r) => r.trim().length > 0).length;
+  const topReasons = (reasons[winner] ?? []).slice(0, 3);
 
   const parts: string[] = [
-    `Based on analysis of ${Object.keys(responses).length} assessment responses, ${PLATFORM_DISPLAY[winner]} is the recommended platform (confidence: ${winnerScore}%).`,
+    `Based on ${answeredCount} assessment responses, ${PLATFORM_DISPLAY[winner]} achieved the highest platform suitability score (${winnerScore}/100).`,
   ];
 
-  if (crm) parts.push(`Use-case fit: "${crm.substring(0, 120)}${crm.length > 120 ? "..." : ""}"`);
-  if (integration) parts.push(`Integration need: "${integration.substring(0, 120)}${integration.length > 120 ? "..." : ""}"`);
-  if (cloud) parts.push(`Cloud suitability: "${cloud.substring(0, 120)}${cloud.length > 120 ? "..." : ""}"`);
-
   if (topReasons.length > 0) {
-    parts.push(`Key scoring signals: ${topReasons.join("; ")}.`);
+    const signalSummary = topReasons
+      .map((r) => r.replace(/^[A-Z_\d]+ response signals /, "Assessment signal: ").replace(/\s*\([+-]\d+pts\)$/, ""))
+      .join("; ");
+    parts.push(`Key evidence: ${signalSummary}.`);
+  } else {
+    parts.push("No keyword signals were matched in responses — this recommendation is based on default scoring only and should be treated as indicative.");
   }
 
   return parts.join(" ");
 }
 
-// ─── Main exported function ───────────────────────────────────────────────────
-
 export function generateRecommendation(assessmentId: number): RecommendationResult {
-  // Fetch all responses for this assessment
+  const assessment = db
+    .prepare(
+      `SELECT business_context, business_goals, business_drivers, business_requirement
+       FROM assessments WHERE id = ?`
+    )
+    .get(assessmentId) as { business_context: string; business_goals: string; business_drivers: string; business_requirement: string } | undefined;
+
   const rows = db
     .prepare(
       `SELECT q.question_key, r.response_text
@@ -364,8 +517,6 @@ export function generateRecommendation(assessmentId: number): RecommendationResu
     responses[row.question_key] = row.response_text;
   }
 
-  // Initialise raw scores for each platform
-  const platforms: Platform[] = ["Salesforce", "ServiceNow", "MicrosoftPowerPlatform", "CustomBuild"];
   const rawScores: Record<Platform, number> = {
     Salesforce: 0,
     ServiceNow: 0,
@@ -378,18 +529,31 @@ export function generateRecommendation(assessmentId: number): RecommendationResu
     MicrosoftPowerPlatform: [],
     CustomBuild: [],
   };
+  const scoringHits: ScoringHit[] = [];
 
-  // Score every response
-  for (const [questionKey, responseText] of Object.entries(responses)) {
-    if (responseText) {
-      scoreResponse(questionKey, responseText, rawScores, reasons);
+  if (assessment) {
+    const metadataFields = [
+      { text: assessment.business_context, label: "Business Context" },
+      { text: assessment.business_goals, label: "Business Goals" },
+      { text: assessment.business_drivers, label: "Business Drivers" },
+      { text: assessment.business_requirement, label: "Business Requirement" },
+    ];
+
+    for (const { text, label } of metadataFields) {
+      if (text) {
+        scoreResponse(`META_${label.replace(/\s+/g, "_")}`, text, rawScores, reasons, scoringHits);
+      }
     }
   }
 
-  // Normalise to 0-100
+  for (const [questionKey, responseText] of Object.entries(responses)) {
+    if (responseText) {
+      scoreResponse(questionKey, responseText, rawScores, reasons, scoringHits);
+    }
+  }
+
   const normScores = normaliseScores(rawScores);
 
-  // Find the winner
   const winner = (Object.entries(normScores) as [Platform, number][]).reduce(
     (best, [p, s]) => (s > best[1] ? [p, s] : best),
     ["Salesforce", 0] as [Platform, number]
@@ -397,7 +561,6 @@ export function generateRecommendation(assessmentId: number): RecommendationResu
 
   const winnerScore = normScores[winner];
 
-  // Build sorted platform scores for display
   const platformScores: PlatformScore[] = (Object.entries(normScores) as [Platform, number][])
     .sort((a, b) => b[1] - a[1])
     .map(([platform, score]) => ({
@@ -414,20 +577,32 @@ export function generateRecommendation(assessmentId: number): RecommendationResu
     risks: PLATFORM_RISKS[winner],
     alternatives: PLATFORM_ALTERNATIVES[winner],
     platformScores,
+    scoringHits,
   };
 }
-
-// ─── Persist recommendation to DB ────────────────────────────────────────────
 
 export function saveRecommendation(assessmentId: number, result: RecommendationResult): void {
   const now = new Date().toISOString();
 
-  // Upsert — delete existing and re-insert so we always have latest
+  const existing = db
+    .prepare(
+      `SELECT architect_approval, architect_approval_reason, architect_approval_recorded_at
+       FROM recommendations
+       WHERE assessment_id = ?`
+    )
+    .get(assessmentId) as
+    | {
+        architect_approval: string | null;
+        architect_approval_reason: string | null;
+        architect_approval_recorded_at: string | null;
+      }
+    | undefined;
+
   db.prepare(`DELETE FROM recommendations WHERE assessment_id = ?`).run(assessmentId);
 
   db.prepare(`
-    INSERT INTO recommendations (assessment_id, platform_recommendation, rationale, confidence_score, risks, alternatives, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO recommendations (assessment_id, platform_recommendation, rationale, confidence_score, risks, alternatives, architect_approval, architect_approval_reason, architect_approval_recorded_at, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     assessmentId,
     result.displayName,
@@ -435,10 +610,12 @@ export function saveRecommendation(assessmentId: number, result: RecommendationR
     result.confidenceScore,
     result.risks,
     result.alternatives,
+    existing?.architect_approval ?? null,
+    existing?.architect_approval_reason ?? null,
+    existing?.architect_approval_recorded_at ?? null,
     now
   );
 
-  // Mark assessment as completed
   db.prepare(`
     UPDATE assessments SET status = 'completed', completed_at = ?, updated_at = ? WHERE id = ?
   `).run(now, now, assessmentId);

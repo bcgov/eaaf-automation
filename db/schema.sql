@@ -97,6 +97,9 @@ CREATE TABLE IF NOT EXISTS recommendations (
   confidence_score INTEGER CHECK(confidence_score >= 0 AND confidence_score <= 100),
   risks TEXT,
   alternatives TEXT,
+  architect_approval TEXT,
+  architect_approval_reason TEXT,
+  architect_approval_recorded_at DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (assessment_id) REFERENCES assessments(id)
 );
@@ -106,6 +109,16 @@ CREATE TABLE IF NOT EXISTS assessment_history (
   assessment_id INTEGER NOT NULL,
   snapshot_json TEXT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (assessment_id) REFERENCES assessments(id)
+);
+
+CREATE TABLE IF NOT EXISTS assessment_embeddings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  assessment_id INTEGER NOT NULL UNIQUE,
+  context_embedding TEXT NOT NULL,
+  embedding_model TEXT DEFAULT 'all-MiniLM-L6-v2',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (assessment_id) REFERENCES assessments(id)
 );
 

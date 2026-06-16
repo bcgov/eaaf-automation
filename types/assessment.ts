@@ -21,6 +21,7 @@ export interface Assessment {
   business_requirement?: string;
   business_goal?: string;
   business_driver?: string;
+  recommendation?: string;
   created_at: string;
   updated_at: string;
   completed_at?: string;
@@ -40,6 +41,7 @@ export interface CreateAssessmentRequest {
 export interface UpdateAssessmentRequest {
   name?: string;
   description?: string;
+  current_step_id?: StepKey;
   business_context?: string;
   business_goals?: string;
   business_drivers?: string;

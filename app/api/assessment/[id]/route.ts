@@ -41,6 +41,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     updateFields.push("description = ?");
     updateValues.push(body.description);
   }
+  if (body.current_step_id !== undefined) {
+    updateFields.push("current_step_id = ?");
+    updateValues.push(body.current_step_id);
+  }
   if (body.business_context !== undefined) {
     updateFields.push("business_context = ?");
     updateValues.push(body.business_context);
@@ -93,4 +97,36 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     .get(assessmentId);
 
   return NextResponse.json(updated);
+}
+
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const assessmentId = parseInt(id);
+
+  if (Number.isNaN(assessmentId)) {
+    return NextResponse.json({ error: "Invalid assessment id" }, { status: 400 });
+  }
+
+  const assessment = db
+    .prepare(`SELECT id FROM assessments WHERE id = ?`)
+    .get(assessmentId) as { id: number } | undefined;
+
+  if (!assessment) {
+    return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
+  }
+
+  // Delete all child records before removing the assessment.
+  // Use a transaction to avoid partial cleanup if any statement fails.
+  const deleteAssessment = db.transaction((idToDelete: number) => {
+    db.prepare(`DELETE FROM responses WHERE assessment_id = ?`).run(idToDelete);
+    db.prepare(`DELETE FROM recommendations WHERE assessment_id = ?`).run(idToDelete);
+    db.prepare(`DELETE FROM assessment_step_state WHERE assessment_id = ?`).run(idToDelete);
+    db.prepare(`DELETE FROM assessment_history WHERE assessment_id = ?`).run(idToDelete);
+    db.prepare(`DELETE FROM assessment_embeddings WHERE assessment_id = ?`).run(idToDelete);
+    db.prepare(`DELETE FROM assessments WHERE id = ?`).run(idToDelete);
+  });
+
+  deleteAssessment(assessmentId);
+
+  return NextResponse.json({ deleted: true, id: assessmentId });
 }
