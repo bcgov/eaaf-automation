@@ -62,9 +62,35 @@ This single command does everything:
 
 **Optional flags:**
 ```powershell
+.\setup-dev.ps1 -Clean            # Delete db, venv, node_modules; rebuild from scratch
 .\setup-dev.ps1 -StartDev         # Auto-start dev server immediately
 .\setup-dev.ps1 -SkipEmbeddings   # Skip embedding service
 .\setup-dev.ps1 -SkipSeed         # Skip data seeding
+```
+
+Important:
+- `./setup-dev.ps1` prepares the environment and may start the embedding service, but it does **not** keep a Next.js app server running unless you pass `-StartDev`.
+- If you do not use `-StartDev`, run `npm run dev` manually from the `eaaf-automation` folder.
+- In PowerShell, use `;` (not `&&`) when chaining commands, for example: `cd eaaf-automation; npm run dev`.
+
+**Resetting Everything:**
+
+If you need a completely fresh environment (corrupted DB, stale dependencies, etc.):
+
+```powershell
+.\setup-dev.ps1 -Clean
+```
+
+This will:
+- Delete `data/app.db` (database)
+- Delete `local-embedding-service\.venv` (Python environment)
+- Delete `node_modules` (npm dependencies)
+- Then run the full setup from scratch
+
+You can combine flags:
+```powershell
+.\setup-dev.ps1 -Clean -StartDev           # Clean rebuild + auto-start dev server
+.\setup-dev.ps1 -Clean -SkipEmbeddings     # Clean rebuild without embeddings
 ```
 
 **Expected output (without `-StartDev`):**
@@ -131,6 +157,8 @@ If you ran setup **without** `-StartDev` flag:
 ```bash
 npm run dev
 ```
+
+Run this command from the `eaaf-automation` directory (the folder that contains `package.json`).
 
 Then open **http://localhost:3000/eaaf-automation** in your browser.
 

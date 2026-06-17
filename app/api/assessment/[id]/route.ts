@@ -10,7 +10,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     .prepare(`
       SELECT id, name, description, status, current_step_id, 
              business_context, business_goals, business_drivers,
-             business_requirement, business_goal, business_driver,
+              business_requirement,
              created_at, updated_at, completed_at
       FROM assessments WHERE id = ?
     `)
@@ -61,14 +61,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     updateFields.push("business_requirement = ?");
     updateValues.push(body.business_requirement);
   }
-  if (body.business_goal !== undefined) {
-    updateFields.push("business_goal = ?");
-    updateValues.push(body.business_goal);
-  }
-  if (body.business_driver !== undefined) {
-    updateFields.push("business_driver = ?");
-    updateValues.push(body.business_driver);
-  }
   if (body.status !== undefined) {
     updateFields.push("status = ?");
     updateValues.push(body.status);
@@ -90,7 +82,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     .prepare(`
       SELECT id, name, description, status, current_step_id, 
              business_context, business_goals, business_drivers,
-             business_requirement, business_goal, business_driver,
+              business_requirement,
              created_at, updated_at, completed_at
       FROM assessments WHERE id = ?
     `)

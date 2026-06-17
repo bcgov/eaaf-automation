@@ -16,12 +16,10 @@ export async function POST(request: Request) {
       business_goals,
       business_drivers,
       business_requirement,
-      business_goal,
-      business_driver,
       created_at, 
       updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     body.name || `Assessment ${now}`,
     body.description || null,
@@ -31,8 +29,6 @@ export async function POST(request: Request) {
     body.business_goals || null,
     body.business_drivers || null,
     body.business_requirement || null,
-    body.business_goal || null,
-    body.business_driver || null,
     now,
     now
   );

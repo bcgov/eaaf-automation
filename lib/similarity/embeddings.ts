@@ -63,7 +63,9 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     const result = await postJson("/embed", { text, model: LOCAL_EMBEDDING_MODEL });
     return assertNumberArray(result?.embedding, "single text embedding");
   } catch (error) {
-    console.error("Error generating embedding from local service:", error);
+    if (!(error instanceof Error && error.message.includes("LOCAL_EMBEDDING_SERVICE_UNAVAILABLE:"))) {
+      console.error("Error generating embedding from local service:", error);
+    }
     throw error;
   }
 }
@@ -86,7 +88,9 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
 
     return result.embeddings.map((e: unknown, idx: number) => assertNumberArray(e, `batch embedding ${idx}`));
   } catch (error) {
-    console.error("Error generating embedding batch from local service:", error);
+    if (!(error instanceof Error && error.message.includes("LOCAL_EMBEDDING_SERVICE_UNAVAILABLE:"))) {
+      console.error("Error generating embedding batch from local service:", error);
+    }
     throw error;
   }
 }

@@ -103,49 +103,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     businessGoal: string;
     businessDriver: string;
     businessRequirement: string;
-    comparison: {
-      scoreByCategory: Array<{
-        category: string;
-        weight: number;
-        score: number;
-        matchedRationale: string[];
-        differentiators: string[];
-        reductionDrivers: string[];
-      }>;
-      overallScoreDerivation: string;
-      similarityInterpretation: string;
-      matched: {
-        businessContext: string[];
-        primaryGoal: string[];
-        businessAlignment: string[];
-        businessRequirements: string[];
-        architecturalConstraints: string[];
-        operationalRequirements: string[];
-        platformAssessmentResponses: string[];
-      };
-      notMatched: {
-        majorDifferences: string[];
-        uniqueRequirements: string[];
-        priorityDifferences: string[];
-        capabilityDifferences: string[];
-      };
-      whyScoreNotHigher: {
-        summary: string;
-        topContributors: string[];
-      };
-      assessmentResponseComparison: {
-        similarQuestionThemes: string[];
-        differentQuestionThemes: string[];
-        similarResponseThemes: string[];
-        differentResponseThemes: string[];
-      };
-      platformOutcomeComparison: {
-        historicalDecisionBasis: string;
-        applicabilityToCurrent: string;
-        deterministicDecisionContext: string;
-        strongestContributingFactors: string[];
-      };
-    };
+    topMatchedThemes: string[];
+    comparison: unknown;
   }> = [];
 
   try {
@@ -159,6 +118,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       businessGoal: s.businessGoal,
       businessDriver: s.businessDriver,
       businessRequirement: s.businessRequirement,
+      topMatchedThemes: s.topMatchedThemes,
       comparison: s.comparison,
     }));
   } catch (e) {

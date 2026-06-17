@@ -21,9 +21,7 @@ export default function BusinessContextPanel({
   const [isEditing, setIsEditing] = useState(initialEditing);
   const [formData, setFormData] = useState({
     business_context: assessment.business_context || "",
-    business_goal: assessment.business_goal || "",
     business_goals: assessment.business_goals || "",
-    business_driver: assessment.business_driver || "",
     business_drivers: assessment.business_drivers || "",
     business_requirement: assessment.business_requirement || "",
   });
@@ -44,9 +42,7 @@ export default function BusinessContextPanel({
   const handleCancel = () => {
     setFormData({
       business_context: assessment.business_context || "",
-      business_goal: assessment.business_goal || "",
       business_goals: assessment.business_goals || "",
-      business_driver: assessment.business_driver || "",
       business_drivers: assessment.business_drivers || "",
       business_requirement: assessment.business_requirement || "",
     });
@@ -91,29 +87,6 @@ export default function BusinessContextPanel({
             />
           </div>
 
-          <div className={styles.row}>
-            <div className={styles.formGroup}>
-              <label>Primary Goal *</label>
-              <textarea
-                name="business_goal"
-                value={formData.business_goal}
-                onChange={handleChange}
-                rows={2}
-                className={styles.textarea}
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Primary Driver</label>
-              <textarea
-                name="business_driver"
-                value={formData.business_driver}
-                onChange={handleChange}
-                rows={2}
-                className={styles.textarea}
-              />
-            </div>
-          </div>
-
           <div className={styles.formGroup}>
             <label>Requirement *</label>
             <textarea
@@ -126,7 +99,7 @@ export default function BusinessContextPanel({
           </div>
 
           <div className={styles.formGroup}>
-            <label>Goals (Multiple)</label>
+            <label>Business Goals</label>
             <textarea
               name="business_goals"
               value={formData.business_goals}
@@ -138,7 +111,7 @@ export default function BusinessContextPanel({
           </div>
 
           <div className={styles.formGroup}>
-            <label>Drivers (Multiple)</label>
+            <label>Business Drivers</label>
             <textarea
               name="business_drivers"
               value={formData.business_drivers}
@@ -195,20 +168,6 @@ export default function BusinessContextPanel({
           <div className={styles.field}>
             <strong>Requirement:</strong>
             <p>{assessment.business_requirement}</p>
-          </div>
-        )}
-
-        {assessment.business_goal && (
-          <div className={styles.field}>
-            <strong>Primary Goal:</strong>
-            <p>{assessment.business_goal}</p>
-          </div>
-        )}
-
-        {assessment.business_driver && (
-          <div className={styles.field}>
-            <strong>Primary Driver:</strong>
-            <p>{assessment.business_driver}</p>
           </div>
         )}
 

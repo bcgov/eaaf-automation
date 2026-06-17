@@ -56,17 +56,15 @@ const seedHistoricalAssessments = () => {
 
     // Create assessment
     db.prepare(`
-      INSERT INTO assessments (name, status, current_step_id, business_context, business_goal, business_goals, business_driver, business_drivers, business_requirement, created_at, updated_at, completed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO assessments (name, status, current_step_id, business_context, business_goals, business_drivers, business_requirement, created_at, updated_at, completed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       seedData.assessmentName,
       seedData.status,
       seedData.currentStepId,
       seedData.businessContext,
-      seedData.businessGoal,
-      seedData.businessGoals,
-      seedData.businessDriver,
-      seedData.businessDrivers,
+      seedData.businessGoals || seedData.businessGoal,
+      seedData.businessDrivers || seedData.businessDriver,
       seedData.businessRequirement,
       now,
       now,

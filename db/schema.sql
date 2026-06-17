@@ -10,8 +10,6 @@ CREATE TABLE IF NOT EXISTS assessments (
   business_goals TEXT,
   business_drivers TEXT,
   business_requirement TEXT,
-  business_goal TEXT,
-  business_driver TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   completed_at DATETIME

@@ -15,8 +15,6 @@ const initializeDatabase = () => {
       business_goals TEXT,
       business_drivers TEXT,
       business_requirement TEXT,
-      business_goal TEXT,
-      business_driver TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       completed_at DATETIME
@@ -172,12 +170,61 @@ const initializeDatabase = () => {
     db.exec("ALTER TABLE assessments ADD COLUMN business_requirement TEXT");
   }
 
-  if (!hasColumn("assessments", "business_goal")) {
-    db.exec("ALTER TABLE assessments ADD COLUMN business_goal TEXT");
-  }
+  // Backfill and remove legacy duplicate singular columns.
+  if (hasColumn("assessments", "business_goal") || hasColumn("assessments", "business_driver")) {
+    db.exec(`
+      UPDATE assessments
+      SET business_goals = COALESCE(NULLIF(TRIM(business_goals), ''), business_goal)
+      WHERE business_goal IS NOT NULL;
 
-  if (!hasColumn("assessments", "business_driver")) {
-    db.exec("ALTER TABLE assessments ADD COLUMN business_driver TEXT");
+      UPDATE assessments
+      SET business_drivers = COALESCE(NULLIF(TRIM(business_drivers), ''), business_driver)
+      WHERE business_driver IS NOT NULL;
+    `);
+
+    db.exec("PRAGMA foreign_keys = OFF");
+    db.exec("BEGIN TRANSACTION");
+    try {
+      db.exec(`
+        CREATE TABLE assessments_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          description TEXT,
+          status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'in_progress', 'completed', 'archived')),
+          current_step_id TEXT,
+          business_context TEXT,
+          business_goals TEXT,
+          business_drivers TEXT,
+          business_requirement TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          completed_at DATETIME
+        );
+
+        INSERT INTO assessments_new (
+          id, name, description, status, current_step_id,
+          business_context, business_goals, business_drivers, business_requirement,
+          created_at, updated_at, completed_at
+        )
+        SELECT
+          id, name, description, status, current_step_id,
+          business_context,
+          COALESCE(NULLIF(TRIM(business_goals), ''), business_goal),
+          COALESCE(NULLIF(TRIM(business_drivers), ''), business_driver),
+          business_requirement,
+          created_at, updated_at, completed_at
+        FROM assessments;
+
+        DROP TABLE assessments;
+        ALTER TABLE assessments_new RENAME TO assessments;
+      `);
+      db.exec("COMMIT");
+    } catch (error) {
+      db.exec("ROLLBACK");
+      db.exec("PRAGMA foreign_keys = ON");
+      throw error;
+    }
+    db.exec("PRAGMA foreign_keys = ON");
   }
 
   if (!hasColumn("recommendations", "architect_approval")) {

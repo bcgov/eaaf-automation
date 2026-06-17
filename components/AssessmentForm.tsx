@@ -21,9 +21,7 @@ export default function AssessmentForm({
     name: assessment?.name || "",
     description: assessment?.description || "",
     business_context: assessment?.business_context || "",
-    business_goal: assessment?.business_goal || "",
     business_goals: assessment?.business_goals || "",
-    business_driver: assessment?.business_driver || "",
     business_drivers: assessment?.business_drivers || "",
     business_requirement: assessment?.business_requirement || "",
   });
@@ -110,38 +108,8 @@ export default function AssessmentForm({
       <div className={styles.section}>
         <h2>Business Goals & Drivers</h2>
 
-        <div className={styles.row}>
-          <div className={styles.formGroup}>
-            <label htmlFor="business_goal">Primary Goal</label>
-            <textarea
-              id="business_goal"
-              name="business_goal"
-              value={formData.business_goal}
-              onChange={handleChange}
-              placeholder="e.g., Implement cloud-native platform with 40% efficiency improvement"
-              className={styles.textarea}
-              rows={2}
-            />
-            <small>What is the main goal?</small>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="business_driver">Primary Driver</label>
-            <textarea
-              id="business_driver"
-              name="business_driver"
-              value={formData.business_driver}
-              onChange={handleChange}
-              placeholder="e.g., Policy modernization mandate"
-              className={styles.textarea}
-              rows={2}
-            />
-            <small>What is the primary business driver?</small>
-          </div>
-        </div>
-
         <div className={styles.formGroup}>
-          <label htmlFor="business_goals">Goals (Multiple)</label>
+          <label htmlFor="business_goals">Business Goals</label>
           <textarea
             id="business_goals"
             name="business_goals"
@@ -151,11 +119,11 @@ export default function AssessmentForm({
             className={styles.textarea}
             rows={4}
           />
-          <small>List strategic goals (one per line or numbered)</small>
+          <small>List strategic goals (one per line or numbered). Include your primary goal first.</small>
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="business_drivers">Drivers (Multiple)</label>
+          <label htmlFor="business_drivers">Business Drivers</label>
           <textarea
             id="business_drivers"
             name="business_drivers"
@@ -165,7 +133,7 @@ export default function AssessmentForm({
             className={styles.textarea}
             rows={4}
           />
-          <small>List business drivers (one per line or numbered)</small>
+          <small>List business drivers (one per line or numbered). Include your primary driver first.</small>
         </div>
       </div>
 

@@ -257,6 +257,19 @@ const SIGNAL_METADATA: Record<string, SignalMeta> = {
       CustomBuild: (pts) => `Awarded ${pts} points. Internal-only support model is feasible for custom-built solutions but requires long-term staffing commitment.`,
     },
   },
+  OPS_SUP_002: {
+    signalName: "Managed Service and Vendor Support Readiness",
+    stageName: "Operational Considerations",
+    factorName: "Operational Support Model",
+    description: (_s, kw) => `Response indicates whether managed service, partner delivery, or vendor-backed support is expected as part of the operating model (signal: "${kw}")`,
+    architecturalMeaning: "The solution is expected to be sustainable through an external support model, which favors platforms with established vendor and partner ecosystems",
+    whyItMatters: "When the target operating model assumes vendor-backed support or managed services, platform viability depends heavily on partner maturity, support availability, and operational sustainability over time.",
+    platformReasoning: {
+      Salesforce: (pts) => `Awarded ${pts} points. Salesforce has an established partner and managed-service ecosystem capable of ongoing operational support in BC Government contexts.`,
+      ServiceNow: (pts) => `Awarded ${pts} points. ServiceNow has a strong specialist partner ecosystem for managed operations, workflow support, and platform sustainment.`,
+      MicrosoftPowerPlatform: (pts) => `Awarded ${pts} points. Power Platform can be supported through Microsoft partners and existing M365 support structures, though large-scale managed operations may require stronger governance.`,
+    },
+  },
   OPS_RISK_001: {
     signalName: "Governance and Compliance Risk Posture",
     stageName: "Operational Considerations",

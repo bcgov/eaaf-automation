@@ -36,7 +36,7 @@ async function run() {
 
   const completed = db
     .prepare(
-      `SELECT a.id, a.name, a.business_context, a.business_goal, a.business_goals, a.business_driver, a.business_drivers, a.business_requirement,
+      `SELECT a.id, a.name, a.business_context, a.business_goals, a.business_drivers, a.business_requirement,
               r.platform_recommendation, r.confidence_score
        FROM assessments a
        LEFT JOIN recommendations r ON r.assessment_id = a.id
@@ -53,8 +53,8 @@ async function run() {
     let snapshot = {
       assessmentName: a.name,
       businessContext: a.business_context || '',
-      businessGoal: a.business_goal || a.business_goals || '',
-      businessDriver: a.business_driver || a.business_drivers || '',
+      businessGoal: a.business_goals || '',
+      businessDriver: a.business_drivers || '',
       businessRequirement: a.business_requirement || '',
       platformScores: buildFallbackPlatformScores(a.platform_recommendation || ''),
       platformRecommendation: a.platform_recommendation || 'Unknown',

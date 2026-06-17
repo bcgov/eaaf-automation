@@ -16,50 +16,45 @@ export interface SimilarAssessment {
   businessRequirement: string;
   similarityScore: number; // 0-100
   similarityMethod: "architectural-category";
-  comparison: {
-    scoreByCategory: Array<{
-      category: string;
-      weight: number;
-      score: number;
-      matchedRationale: string[];
-      differentiators: string[];
-      reductionDrivers: string[];
-    }>;
-    overallScoreDerivation: string;
-    similarityInterpretation: string;
-    matched: {
-      businessContext: string[];
-      primaryGoal: string[];
-      businessAlignment: string[];
-      businessRequirements: string[];
-      architecturalConstraints: string[];
-      operationalRequirements: string[];
-      platformAssessmentResponses: string[];
-    };
-    notMatched: {
-      majorDifferences: string[];
-      uniqueRequirements: string[];
-      priorityDifferences: string[];
-      capabilityDifferences: string[];
-    };
-    whyScoreNotHigher: {
-      summary: string;
-      topContributors: string[];
-    };
-    assessmentResponseComparison: {
-      similarQuestionThemes: string[];
-      differentQuestionThemes: string[];
-      similarResponseThemes: string[];
-      differentResponseThemes: string[];
-    };
-    platformOutcomeComparison: {
-      historicalDecisionBasis: string;
-      applicabilityToCurrent: string;
-      deterministicDecisionContext: string;
-      strongestContributingFactors: string[];
-    };
+  topMatchedThemes: string[];
+  comparison: HistoricalComparison;
+}
+
+interface CategoryScoreBreakdown {
+  category: string;
+  weight: number;
+  score: number | null;
+  status: "available" | "unavailable";
+  matchedRationale: string[];
+  differentiators: string[];
+  reductionDrivers: string[];
+}
+
+interface HistoricalComparison {
+  scoreByCategory: CategoryScoreBreakdown[];
+  overallScoreDerivation: string;
+  similarityInterpretation: string;
+  matched: Record<string, string[]>;
+  notMatched: Record<string, string[]>;
+  whyScoreNotHigher: {
+    summary: string;
+    topContributors: string[];
+  };
+  assessmentResponseComparison: {
+    similarQuestionThemes: string[];
+    differentQuestionThemes: string[];
+    similarResponseThemes: string[];
+    differentResponseThemes: string[];
+  };
+  platformOutcomeComparison: {
+    historicalDecisionBasis: string;
+    applicabilityToCurrent: string;
+    deterministicDecisionContext: string;
+    strongestContributingFactors: string[];
   };
 }
+
+let semanticCategoryServiceUnavailable = false;
 
 interface HistoryRow {
   id: number;
@@ -256,7 +251,32 @@ async function computeSemanticCategorySimilarity(
   historicalAssessment: SimpleContext,
   currentResponses: AssessmentResponseRow[],
   historicalResponses: AssessmentResponseRow[]
-): Promise<{ score: number; matchedRationale: string[]; differentiators: string[]; reductionDrivers: string[] }> {
+): Promise<{ score: number | null; status: "available" | "unavailable"; matchedRationale: string[]; differentiators: string[]; reductionDrivers: string[] }> {
+  const buildLexicalFallback = () => {
+    const currentContext = buildSemanticCategoryContext(category, currentAssessment, currentResponses);
+    const historicalContext = buildSemanticCategoryContext(category, historicalAssessment, historicalResponses);
+    const score = clampScore(Math.round(jaccardSimilarity(currentContext, historicalContext) * 100));
+    const matchedRationale = score >= 70
+      ? [categoryMatchNarrative(category.label), `${category.label} was compared using lexical overlap because semantic embedding service was unavailable.`]
+      : [`${category.label} was compared using lexical overlap because semantic embedding service was unavailable.`];
+    const differentiators = score < 85 ? [categoryDifferenceNarrative(category.label)] : [];
+    const reductionDrivers = score < 85
+      ? [categoryReductionNarrative(category.label), "Fallback lexical comparison reduced precision versus semantic comparison."]
+      : ["Category score derived from lexical fallback while semantic service was unavailable."];
+
+    return {
+      score,
+      status: "available" as const,
+      matchedRationale,
+      differentiators,
+      reductionDrivers,
+    };
+  };
+
+  if (semanticCategoryServiceUnavailable) {
+    return buildLexicalFallback();
+  }
+
   try {
     // Build semantic context for category
     const currentContext = buildSemanticCategoryContext(category, currentAssessment, currentResponses);
@@ -275,10 +295,20 @@ async function computeSemanticCategorySimilarity(
     const differentiators = score < 85 ? [categoryDifferenceNarrative(category.label)] : [];
     const reductionDrivers = score < 85 ? [categoryReductionNarrative(category.label)] : [];
 
-    return { score, matchedRationale, differentiators, reductionDrivers };
+    return { score, status: "available", matchedRationale, differentiators, reductionDrivers };
   } catch (error) {
-    // Fallback: if embedding fails, return neutral score
-    return { score: 50, matchedRationale: [], differentiators: [`${category.label} semantic comparison unavailable`], reductionDrivers: [] };
+    if (error instanceof Error && error.message.includes("LOCAL_EMBEDDING_SERVICE_UNAVAILABLE:")) {
+      semanticCategoryServiceUnavailable = true;
+      return buildLexicalFallback();
+    }
+
+    return {
+      score: null,
+      status: "unavailable",
+      matchedRationale: [],
+      differentiators: [`${category.label} semantic comparison unavailable`],
+      reductionDrivers: ["Category score omitted because semantic comparison data was unavailable."],
+    };
   }
 }
 
@@ -578,6 +608,21 @@ function buildFieldAlignmentNarrative(label: string, currentValue: string, histo
   return { match, diff, unique };
 }
 
+function deriveTopMatchedThemes(current: SimpleContext, historical: SimpleContext): string[] {
+  const themes: Array<{ label: string; score: number }> = [
+    { label: "Business context alignment", score: jaccardSimilarity(current.businessContext, historical.businessContext) },
+    { label: "Business goals alignment", score: jaccardSimilarity(current.businessGoal, historical.businessGoal) },
+    { label: "Business drivers alignment", score: jaccardSimilarity(current.businessDriver, historical.businessDriver) },
+    { label: "Business requirements alignment", score: jaccardSimilarity(current.businessRequirement, historical.businessRequirement) },
+  ];
+
+  return themes
+    .filter((t) => t.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((t) => `${t.label} (${Math.round(t.score * 100)}%)`);
+}
+
 async function buildDetailedComparison(
   currentAssessment: SimpleContext,
   historicalAssessment: SimpleContext,
@@ -588,7 +633,7 @@ async function buildDetailedComparison(
   currentRecommendationReasons: string[],
   historicalPlatform: string,
   historicalRationale: string
-): Promise<SimilarAssessment["comparison"]> {
+): Promise<HistoricalComparison> {
   const currentProfile = buildAssessmentProfile(currentAssessment, currentResponses);
   const historicalProfile = buildAssessmentProfile(historicalAssessment, historicalResponses);
 
@@ -600,7 +645,7 @@ async function buildDetailedComparison(
   // Compute semantic similarity for each category using AI embeddings
   const scoreByCategory = await Promise.all(
     CATEGORY_MODEL.map(async (category) => {
-      const { score, matchedRationale, differentiators, reductionDrivers } = await computeSemanticCategorySimilarity(
+      const { score, status, matchedRationale, differentiators, reductionDrivers } = await computeSemanticCategorySimilarity(
         category,
         currentAssessment,
         historicalAssessment,
@@ -612,17 +657,22 @@ async function buildDetailedComparison(
         category: category.label,
         weight: category.weight,
         score,
+        status: status as "available" | "unavailable",
         matchedRationale,
         differentiators,
         reductionDrivers,
-        weightedScore: score * category.weight,
+        weightedScore: score === null ? 0 : score * category.weight,
       };
     })
   );
 
-  const totalWeight = scoreByCategory.reduce((sum, item) => sum + item.weight, 0);
-  const weightedScore = totalWeight > 0 ? Math.round(scoreByCategory.reduce((sum, item) => sum + item.weightedScore, 0) / totalWeight) : baseSimilarityScore;
+  const availableCategories = scoreByCategory.filter((item) => item.score !== null);
+  const totalWeight = availableCategories.reduce((sum, item) => sum + item.weight, 0);
+  const weightedScore = totalWeight > 0
+    ? Math.round(availableCategories.reduce((sum, item) => sum + item.weightedScore, 0) / totalWeight)
+    : baseSimilarityScore;
   const similarityScore = clampScore(Math.round(weightedScore * 0.85 + baseSimilarityScore * 0.15));
+  const unavailableCategories = scoreByCategory.filter((item) => item.score === null).map((item) => item.category);
 
   const capabilityCategory = scoreByCategory.find((item) => item.category === "Architectural capabilities");
   const operatingCategory = scoreByCategory.find((item) => item.category === "Operating model");
@@ -647,8 +697,11 @@ async function buildDetailedComparison(
   if (requirementAnalysis.diff.length > 0) topContributors.push("Business requirements are only partially overlapping.");
   if (concreteDifferences.length > 0) topContributors.push("Architectural and operating intent differs across several precedent dimensions.");
   if (capabilityDifferences.length > 0) topContributors.push("Operational and platform capability emphasis differs between assessments.");
-  for (const category of scoreByCategory.filter((item) => item.score < 70).slice(0, 3)) {
+  for (const category of scoreByCategory.filter((item) => item.score !== null && item.score < 70).slice(0, 3)) {
     topContributors.push(`${category.category} reduced similarity (score ${category.score}/100).`);
+  }
+  for (const category of unavailableCategories.slice(0, 3)) {
+    topContributors.push(`${category} could not be semantically compared and was excluded from weighted category scoring.`);
   }
 
   const normalizedHistoricalPlatform = historicalPlatform
@@ -670,23 +723,30 @@ async function buildDetailedComparison(
       ? `Similarity is ${similarityScore}% rather than 100% primarily because ${topContributors[0].toLowerCase()}`
       : `Similarity is ${similarityScore}% because key context and response patterns align strongly.`;
 
+  const availabilityNote = unavailableCategories.length > 0
+    ? ` ${unavailableCategories.length} categor${unavailableCategories.length === 1 ? "y was" : "ies were"} unavailable for semantic comparison and excluded from the weighted category calculation.`
+    : "";
+
   const similarityInterpretation =
     similarityScore >= 75
-      ? `${similarityScore}% indicates strong precedent relevance. The historical assessment is materially aligned with the current assessment across architecture, delivery model, and platform decision factors, with only moderate contextual differences.`
+      ? `${similarityScore}% indicates strong precedent relevance. The historical assessment is materially aligned with the current assessment across architecture, delivery model, and platform decision factors, with only moderate contextual differences.${availabilityNote}`
       : similarityScore >= 50
-      ? `${similarityScore}% indicates partial precedent relevance. The historical assessment contains comparable governance, security, workflow, and platform evaluation characteristics. However, differences in business objectives, operational priorities, and platform selection drivers reduce the applicability of the historical recommendation to the current assessment.`
-      : `${similarityScore}% indicates limited precedent relevance. Some contextual overlap exists, but major differences in business direction, operating model, and platform decision criteria significantly limit how much the historical recommendation should influence the current assessment.`;
+      ? `${similarityScore}% indicates partial precedent relevance. The historical assessment contains comparable governance, security, workflow, and platform evaluation characteristics. However, differences in business objectives, operational priorities, and platform selection drivers reduce the applicability of the historical recommendation to the current assessment.${availabilityNote}`
+      : `${similarityScore}% indicates limited precedent relevance. Some contextual overlap exists, but major differences in business direction, operating model, and platform decision criteria significantly limit how much the historical recommendation should influence the current assessment.${availabilityNote}`;
 
   return {
     scoreByCategory: scoreByCategory.map((item) => ({
       category: item.category,
       weight: item.weight,
       score: item.score,
+      status: item.status,
       matchedRationale: item.matchedRationale,
       differentiators: item.differentiators,
       reductionDrivers: item.reductionDrivers,
     })),
-    overallScoreDerivation: `The initial category comparison produced a similarity score of ${weightedScore}%. Additional full-assessment narrative review adjusted confidence, resulting in a final similarity score of ${similarityScore}%.`,
+    overallScoreDerivation: totalWeight > 0
+      ? `Weighted category comparison across available categories produced ${weightedScore}%. Summary embedding similarity contributed the remaining calibration, resulting in a final similarity score of ${similarityScore}%.${availabilityNote}`
+      : `No category-level semantic scores were available. Final similarity score of ${similarityScore}% is based on summary embedding comparison only.`,
     similarityInterpretation,
     matched: {
       businessContext: [...contextAnalysis.match, ...concreteMatches.slice(0, 2)],
@@ -711,10 +771,10 @@ async function buildDetailedComparison(
       similarQuestionThemes,
       differentQuestionThemes,
       similarResponseThemes: scoreByCategory
-        .filter((item) => item.score >= 70)
+        .filter((item) => item.score !== null && item.score >= 70)
         .map((item) => categoryAlignmentEvidence(item.category)),
       differentResponseThemes: scoreByCategory
-        .filter((item) => item.score < 70)
+        .filter((item) => item.score !== null && item.score < 70)
         .map((item) => categoryDivergenceEvidence(item.category)),
     },
     platformOutcomeComparison: {
@@ -740,12 +800,18 @@ function parseStoredEmbeddingPayload(raw: string): StoredEmbeddingPayload | null
       };
     }
 
+    const parsedRecord = parsed as {
+      contextEmbedding?: unknown;
+      summaryEmbedding?: unknown;
+      responseEmbeddings?: unknown;
+    } | null;
+
     if (
-      parsed &&
-      typeof parsed === "object" &&
-      isNumberArray((parsed as any).contextEmbedding) &&
-      isNumberArray((parsed as any).summaryEmbedding) &&
-      Array.isArray((parsed as any).responseEmbeddings)
+      parsedRecord &&
+      typeof parsedRecord === "object" &&
+      isNumberArray(parsedRecord.contextEmbedding) &&
+      isNumberArray(parsedRecord.summaryEmbedding) &&
+      Array.isArray(parsedRecord.responseEmbeddings)
     ) {
       return parsed as StoredEmbeddingPayload;
     }
@@ -933,18 +999,27 @@ export async function findSimilarAssessments(
       businessRequirement: snapshot.businessRequirement ?? historicalContextFromAssessment.businessRequirement,
     };
 
-    const historicalRationale = snapshot.rationale ?? getHistoricalRationale(candidate.row.assessment_id);
+    const topMatchedThemes = deriveTopMatchedThemes(currentAssessment, historicalContext);
     const comparison = await buildDetailedComparison(
       currentAssessment,
       historicalContext,
       currentResponses,
       historicalResponses,
-      candidate.similarityScore,
+      clampScore(candidate.similarityScore),
       current.platform,
       currentPlatformReasons,
       snapshot.platformRecommendation,
-      historicalRationale
+      getHistoricalRationale(candidate.row.assessment_id)
     );
+    const similarityScore = comparison.scoreByCategory.some((item) => item.score !== null)
+      ? clampScore(
+          Math.round(
+            Number(
+              comparison.overallScoreDerivation.match(/final similarity score of (\d+)%/i)?.[1] ?? candidate.similarityScore
+            )
+          )
+        )
+      : clampScore(candidate.similarityScore);
 
     results.push({
       assessmentId: candidate.row.assessment_id,
@@ -955,11 +1030,9 @@ export async function findSimilarAssessments(
       businessGoal: historicalContext.businessGoal,
       businessDriver: historicalContext.businessDriver,
       businessRequirement: historicalContext.businessRequirement,
-      similarityScore: Math.round(
-        comparison.scoreByCategory.reduce((sum, item) => sum + item.score * item.weight, 0) /
-          Math.max(1, comparison.scoreByCategory.reduce((sum, item) => sum + item.weight, 0))
-      ),
+      similarityScore,
       similarityMethod: "architectural-category",
+      topMatchedThemes,
       comparison,
     });
   }

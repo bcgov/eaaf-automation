@@ -33,38 +33,22 @@ interface SimilarItem {
   businessGoal: string;
   businessDriver: string;
   businessRequirement: string;
-  comparison: {
+  topMatchedThemes: string[];
+  comparison?: {
     scoreByCategory: Array<{
       category: string;
       weight: number;
-      score: number;
-      matchedRationale?: string[];
-      matchedIndicators?: string[];
-      differentiators?: string[];
-      reductionDrivers?: string[];
+      score: number | null;
+      status: "available" | "unavailable";
+      matchedRationale: string[];
+      differentiators: string[];
+      reductionDrivers: string[];
     }>;
     overallScoreDerivation: string;
     similarityInterpretation: string;
-    matched: {
-      businessContext: string[];
-      primaryGoal: string[];
-      businessAlignment: string[];
-      businessDrivers?: string[];
-      businessRequirements: string[];
-      architecturalConstraints: string[];
-      operationalRequirements: string[];
-      platformAssessmentResponses: string[];
-    };
-    notMatched: {
-      majorDifferences: string[];
-      uniqueRequirements: string[];
-      priorityDifferences: string[];
-      capabilityDifferences: string[];
-    };
-    whyScoreNotHigher: {
-      summary: string;
-      topContributors: string[];
-    };
+    matched: Record<string, string[]>;
+    notMatched: Record<string, string[]>;
+    whyScoreNotHigher: { summary: string; topContributors: string[] };
     assessmentResponseComparison: {
       similarQuestionThemes: string[];
       differentQuestionThemes: string[];
@@ -177,32 +161,6 @@ function normalizePlatformLabel(label: string): string {
   return label
     .replace("Microsoft Power Platform + Dynamics 365", "Microsoft Power Platform")
     .replace("Microsoft Dynamics 365", "Microsoft Power Platform");
-}
-
-function asStringArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
-}
-
-function hasSubstantiveAssessmentResponseComparison(value: SimilarItem["comparison"]["assessmentResponseComparison"] | undefined): boolean {
-  if (!value) return false;
-
-  const allItems = [
-    ...asStringArray(value.similarQuestionThemes),
-    ...asStringArray(value.differentQuestionThemes),
-    ...asStringArray(value.similarResponseThemes),
-    ...asStringArray(value.differentResponseThemes),
-  ]
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-
-  if (allItems.length === 0) return false;
-
-  const bannedPlaceholders = [
-    "comparable architectural and business conclusions in this question domain.",
-    "materially different architectural or operational emphasis in this question domain.",
-  ];
-
-  return allItems.some((item) => !bannedPlaceholders.includes(item.toLowerCase()));
 }
 
 function confCls(label: string, s: Record<string, string>) {
@@ -321,6 +279,9 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
   );
 
   const { assessmentMeta, stepsWithData, historicalPrecedentMatches, historicalAlignment, aiTransparency, platformScores, enrichedSignals, institutionalConfidence, confidenceBreakdown } = rec;
+  const allSignals = enrichedSignals ?? [];
+  const metadataSignals = allSignals.filter((sig) => sig.stageName === "Assessment Metadata");
+  const journeySignals = allSignals.filter((sig) => sig.stageName !== "Assessment Metadata");
   const deterministicSuitabilityScore = rec.deterministicSuitabilityScore ?? rec.confidenceScore;
   const sortedPlatformScores = [...platformScores].sort((a, b) => b.score - a.score);
   const hasOtherFactors = !!rec.aiStrategicAssessment;
@@ -415,7 +376,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       </Section>
 
       {/* 2 — ASSESSMENT JOURNEY */}
-      <Section title="2 — Assessment Journey" badge={`${confidenceBreakdown?.totalAnswered ?? 0} of ${confidenceBreakdown?.totalQuestions ?? 0} questions answered`} defaultOpen={false}>
+      <Section title="2 — Assessment Journey" badge={`${confidenceBreakdown?.totalAnswered ?? 0} of ${confidenceBreakdown?.totalQuestions ?? 0} questions answered`} defaultOpen={true}>
         <p className={styles.logicIntro}>The following four evaluation stages were completed as part of this assessment. Each stage collected architect responses against defined factors and sub-factors. Findings indicate how each stage influenced the final recommendation.</p>
         {stepsWithData?.map(step => (
           <div key={step.stepKey} className={styles.journeyStep}>
@@ -454,12 +415,21 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       </Section>
 
       {/* 3 — ASSESSMENT SIGNALS AND SCORING EVIDENCE */}
-      <Section title="3 — Assessment Signals and Scoring Evidence" badge={`${enrichedSignals?.length ?? 0} signals detected`} defaultOpen={false}>
+      <Section title="3 — Assessment Signals and Scoring Evidence" badge={`${allSignals.length} signal${allSignals.length === 1 ? "" : "s"}`} defaultOpen={true}>
         <p className={styles.logicIntro}>
-          The following assessment signals were detected in the architect's responses. Each signal triggered a scoring rule and contributed points to one or more platform suitability scores. The reasoning below explains exactly why each platform received its score for each signal — no internal identifiers are displayed.
+          Full scoring evidence is shown below. Assessment Metadata signals are listed separately, followed by stage-based assessment signals. Each signal includes response evidence, interpretation, why it matters, and platform impact.
         </p>
-        {enrichedSignals?.length > 0 ? enrichedSignals.map((sig, i) => (
-          <div key={i} className={styles.signalCard}>
+
+        {metadataSignals.length > 0 && (
+          <>
+            <h4 className={styles.sectionSubtitle}>Assessment Metadata Signals</h4>
+            <p className={styles.sectionExplanation}>
+              These signals come from Business Context, Business Goals, Business Drivers, and Business Requirement fields captured before question-level scoring.
+            </p>
+          </>
+        )}
+        {metadataSignals.map((sig, i) => (
+          <div key={`meta-${i}`} className={styles.signalCard}>
             <div className={styles.signalHeader}>
               <div className={styles.signalMeta}>
                 <span className={styles.signalStage}>{sig.stageName}</span>
@@ -471,7 +441,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
             <div className={styles.signalBody}>
               <div className={styles.signalRow}>
                 <div className={styles.signalRowLabel}>Response Evidence</div>
-                <div className={styles.signalEvidence}>"{sig.responseEvidence}"</div>
+                <div className={styles.signalEvidence}>&quot;{sig.responseEvidence}&quot;</div>
               </div>
               <div className={styles.signalRow}>
                 <div className={styles.signalRowLabel}>Architectural Interpretation</div>
@@ -491,6 +461,87 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
                       <span className={styles.impactReason}>{pr.reasoning}</span>
                     </div>
                   ))}
+                  {PLATFORM_ORDER
+                    .filter((platform) => !sig.platformRationale.some((pr) => pr.platform === platform))
+                    .map((platform, j) => {
+                      const favoredPlatforms = sig.platformRationale
+                        .filter((pr) => pr.points > 0)
+                        .map((pr) => pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform)
+                        .join(", ");
+                      return (
+                        <div key={`meta-unmatched-${j}`} className={`${styles.platformImpactItem} ${styles.impactNeg}`}>
+                          <span className={styles.impactPts}>0 pts</span>
+                          <span className={styles.impactPlatform}>{platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : platform}</span>
+                          <span className={styles.impactReason}>
+                            Not matched for this signal. Response evidence aligned more strongly with {favoredPlatforms || "other platform criteria"}.
+                          </span>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {journeySignals.length > 0 && (
+          <>
+            <h4 className={styles.sectionSubtitle}>Stage-Based Assessment Signals</h4>
+            <p className={styles.sectionExplanation}>
+              These signals are derived from Architecture, Cloud, Platform, and Operational stage responses.
+            </p>
+          </>
+        )}
+        {journeySignals.length > 0 ? journeySignals.map((sig, i) => (
+          <div key={i} className={styles.signalCard}>
+            <div className={styles.signalHeader}>
+              <div className={styles.signalMeta}>
+                <span className={styles.signalStage}>{sig.stageName}</span>
+                <span className={styles.signalSep}>›</span>
+                <span className={styles.signalFactor}>{sig.factorName}</span>
+              </div>
+              <div className={styles.signalName}>{sig.signalName}</div>
+            </div>
+            <div className={styles.signalBody}>
+              <div className={styles.signalRow}>
+                <div className={styles.signalRowLabel}>Response Evidence</div>
+                <div className={styles.signalEvidence}>&quot;{sig.responseEvidence}&quot;</div>
+              </div>
+              <div className={styles.signalRow}>
+                <div className={styles.signalRowLabel}>Architectural Interpretation</div>
+                <div className={styles.signalText}>{sig.architecturalInterpretation}</div>
+              </div>
+              <div className={styles.signalRow}>
+                <div className={styles.signalRowLabel}>Why This Matters</div>
+                <div className={styles.signalText}>{sig.whyItMatters}</div>
+              </div>
+              <div className={styles.signalRow}>
+                <div className={styles.signalRowLabel}>Platform Impact</div>
+                <div className={styles.platformImpactList}>
+                  {sig.platformRationale.map((pr, j) => (
+                    <div key={j} className={`${styles.platformImpactItem} ${pr.points > 0 ? styles.impactPos : styles.impactNeg}`}>
+                      <span className={styles.impactPts}>{pr.points > 0 ? `+${pr.points}` : pr.points} pts</span>
+                      <span className={styles.impactPlatform}>{pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform}</span>
+                      <span className={styles.impactReason}>{pr.reasoning}</span>
+                    </div>
+                  ))}
+                  {PLATFORM_ORDER
+                    .filter((platform) => !sig.platformRationale.some((pr) => pr.platform === platform))
+                    .map((platform, j) => {
+                      const favoredPlatforms = sig.platformRationale
+                        .filter((pr) => pr.points > 0)
+                        .map((pr) => pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform)
+                        .join(", ");
+                      return (
+                        <div key={`journey-unmatched-${j}`} className={`${styles.platformImpactItem} ${styles.impactNeg}`}>
+                          <span className={styles.impactPts}>0 pts</span>
+                          <span className={styles.impactPlatform}>{platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : platform}</span>
+                          <span className={styles.impactReason}>
+                            Not matched for this signal. Response evidence aligned more strongly with {favoredPlatforms || "other platform criteria"}.
+                          </span>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             </div>
@@ -531,6 +582,9 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
                   const relevantSignals = enrichedSignals?.filter(sig =>
                     sig.platformRationale.some(pr => pr.platform === p && pr.points > 0)
                   ) ?? [];
+                  const missedSignals = enrichedSignals?.filter(sig =>
+                    !sig.platformRationale.some(pr => pr.platform === p)
+                  ) ?? [];
                   return relevantSignals.length > 0 ? (
                     <div className={styles.platformSignals}>
                       <span className={styles.swotLabel}>Assessment evidence that scored this platform</span>
@@ -540,6 +594,20 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
                           return <li key={i}><strong>{sig.signalName}</strong> — {pr ? `+${pr.points} pts` : ""}</li>;
                         })}
                       </ul>
+                      {missedSignals.length > 0 && (
+                        <>
+                          <span className={styles.swotLabel}>Why other signals did not score this platform</span>
+                          <ul className={styles.signalReasonList}>
+                            {missedSignals.slice(0, 3).map((sig, i) => {
+                              const favored = sig.platformRationale
+                                .filter((pr) => pr.points > 0)
+                                .map((pr) => pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform)
+                                .join(", ");
+                              return <li key={`miss-${i}`}><strong>{sig.signalName}</strong> — no points because this evidence favored {favored || "other platforms"}.</li>;
+                            })}
+                          </ul>
+                        </>
+                      )}
                     </div>
                   ) : ps && ps.reasons.length > 0 ? (
                     <div className={styles.platformSignals}>
@@ -682,7 +750,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
         <div className={styles.historicalSimilaritySection}>
           <h4 className={styles.sectionSubtitle}>Historical Assessment Similarity</h4>
           <p className={styles.sectionExplanation}>
-            Historical assessment data from prior architecture evaluations is shown here to help determine whether precedent is genuinely relevant to this case. These precedents are contextual only and do not alter the deterministic recommendation above.
+            Historical assessment data from prior architecture evaluations is shown here as context only. It does not alter the deterministic recommendation above.
           </p>
           {historicalPrecedentMatches?.length > 0 ? (
             <div className={styles.historicalSimilarityCards}>
@@ -712,118 +780,56 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
                     <span className={styles.historicalCardLabel}>Business Requirement:</span>
                     <span className={styles.historicalCardValue}>{s.businessRequirement}</span>
                   </div>
-
-                  <div className={styles.historicalComparisonSection}>
-                    <strong className={styles.historicalComparisonHeading}>Similarity Score Derivation by Category</strong>
-                    <p className={styles.historicalSummary}>{s.comparison.overallScoreDerivation}</p>
-                    <div className={styles.historicalCategoryGrid}>
-                      {s.comparison.scoreByCategory.map((cat, idx) => {
-                        const matchedRationale = asStringArray(cat.matchedRationale ?? cat.matchedIndicators);
-                        const differentiators = asStringArray(cat.differentiators);
-                        return (
-                          <div key={`cat-${idx}`} className={styles.historicalCategoryCard}>
-                            <div className={styles.historicalCategoryHeader}>
-                              <span className={styles.historicalCategoryName}>{cat.category}</span>
-                              <span className={styles.historicalCategoryScore}>{cat.score}/100</span>
-                            </div>
-                            <div className={styles.historicalCategoryWeight}>Weight: {cat.weight}%</div>
-                            {matchedRationale.length > 0 && (
-                              <ul className={styles.historicalList}>
-                                {matchedRationale.map((item, idy) => <li key={`cm-${idy}`}>{item}</li>)}
-                              </ul>
-                            )}
-                            {differentiators.length > 0 && (
-                              <ul className={styles.historicalList}>
-                                {differentiators.map((item, idy) => <li key={`cd-${idy}`}>{item}</li>)}
-                              </ul>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className={styles.historicalComparisonSection}>
-                    <strong className={styles.historicalComparisonHeading}>Interpretation of Similarity Score</strong>
-                    <p className={styles.historicalSummary}>{s.comparison.similarityInterpretation}</p>
-                  </div>
-
-                  <div className={styles.historicalComparisonSection}>
-                    <strong className={styles.historicalComparisonHeading}>What Specifically Matched</strong>
-                    <ul className={styles.historicalList}>
-                      {s.comparison.matched.businessContext.map((item, idx) => <li key={`mc-${idx}`}>{item}</li>)}
-                      {s.comparison.matched.primaryGoal.map((item, idx) => <li key={`mg-${idx}`}>{item}</li>)}
-                      {asStringArray(s.comparison.matched.businessAlignment ?? s.comparison.matched.businessDrivers).map((item, idx) => <li key={`md-${idx}`}>{item}</li>)}
-                      {s.comparison.matched.businessRequirements.map((item, idx) => <li key={`mr-${idx}`}>{item}</li>)}
-                      {s.comparison.matched.architecturalConstraints.map((item, idx) => <li key={`ma-${idx}`}>{item}</li>)}
-                      {s.comparison.matched.operationalRequirements.map((item, idx) => <li key={`mo-${idx}`}>{item}</li>)}
-                      {s.comparison.matched.platformAssessmentResponses.map((item, idx) => <li key={`mp-${idx}`}>{item}</li>)}
-                    </ul>
-                  </div>
-
-                  <div className={styles.historicalComparisonSection}>
-                    <strong className={styles.historicalComparisonHeading}>What Specifically Did Not Match</strong>
-                    <ul className={styles.historicalList}>
-                      {s.comparison.notMatched.majorDifferences.map((item, idx) => <li key={`nd-${idx}`}>{item}</li>)}
-                      {s.comparison.notMatched.uniqueRequirements.map((item, idx) => <li key={`nu-${idx}`}>{item}</li>)}
-                      {s.comparison.notMatched.priorityDifferences.map((item, idx) => <li key={`np-${idx}`}>{item}</li>)}
-                      {s.comparison.notMatched.capabilityDifferences.map((item, idx) => <li key={`nc-${idx}`}>{item}</li>)}
-                    </ul>
-                  </div>
-
-                  <div className={styles.historicalComparisonSection}>
-                    <strong className={styles.historicalComparisonHeading}>Why the Similarity Score Is Not Higher</strong>
-                    <p className={styles.historicalSummary}>{s.comparison.whyScoreNotHigher.summary}</p>
-                    <ul className={styles.historicalList}>
-                      {s.comparison.whyScoreNotHigher.topContributors.map((item, idx) => <li key={`wc-${idx}`}>{item}</li>)}
-                    </ul>
-                    <div className={styles.historicalSubheading}>Highest reduction impact by category</div>
-                    <ul className={styles.historicalList}>
-                      {s.comparison.scoreByCategory
-                        .filter((cat) => cat.score < 70)
-                        .sort((a, b) => a.score - b.score)
-                        .slice(0, 3)
-                        .map((cat, idx) => {
-                          const reductionDrivers = asStringArray(cat.reductionDrivers);
-                          return <li key={`wr-${idx}`}>{cat.category}: {cat.score}/100 ({reductionDrivers.join(" ") || "Lower alignment in this category."})</li>;
-                        })}
-                    </ul>
-                  </div>
-
-                  {hasSubstantiveAssessmentResponseComparison(s.comparison.assessmentResponseComparison) && (
+                  {s.topMatchedThemes?.length > 0 && (
                     <div className={styles.historicalComparisonSection}>
-                      <strong className={styles.historicalComparisonHeading}>Assessment Response Comparison</strong>
-                      <div className={styles.historicalSubheading}>Question areas with similar responses</div>
+                      <strong className={styles.historicalComparisonHeading}>Top matched themes</strong>
                       <ul className={styles.historicalList}>
-                        {asStringArray(s.comparison.assessmentResponseComparison?.similarQuestionThemes).map((item, idx) => <li key={`rsq-${idx}`}>{item}</li>)}
-                      </ul>
-                      <div className={styles.historicalSubheading}>Question areas with materially different responses</div>
-                      <ul className={styles.historicalList}>
-                        {asStringArray(s.comparison.assessmentResponseComparison?.differentQuestionThemes).map((item, idx) => <li key={`rdq-${idx}`}>{item}</li>)}
-                      </ul>
-                      <div className={styles.historicalSubheading}>Shared response themes</div>
-                      <ul className={styles.historicalList}>
-                        {asStringArray(s.comparison.assessmentResponseComparison?.similarResponseThemes).map((item, idx) => <li key={`rst-${idx}`}>{item}</li>)}
-                      </ul>
-                      <div className={styles.historicalSubheading}>Different response themes</div>
-                      <ul className={styles.historicalList}>
-                        {asStringArray(s.comparison.assessmentResponseComparison?.differentResponseThemes).map((item, idx) => <li key={`rdt-${idx}`}>{item}</li>)}
+                        {s.topMatchedThemes.map((item, idx) => <li key={`tm-${idx}`}>{item}</li>)}
                       </ul>
                     </div>
                   )}
+                  {s.comparison && (
+                    <>
+                      <div className={styles.historicalComparisonSection}>
+                        <strong className={styles.historicalComparisonHeading}>Similarity score derivation by category</strong>
+                        <ul className={styles.historicalList}>
+                          {s.comparison.scoreByCategory.map((item, idx) => (
+                            <li key={`cat-${idx}`}>
+                              <strong>{item.category}</strong> ({item.weight}%): {item.status === "unavailable" ? "Unavailable - excluded from weighted score" : `${item.score}/100`}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
 
-                  <div className={styles.historicalComparisonSection}>
-                    <strong className={styles.historicalComparisonHeading}>Platform Outcome Comparison</strong>
-                    <p className={styles.historicalSummary}><strong>Why the historical assessment selected its platform:</strong> {s.comparison.platformOutcomeComparison.historicalDecisionBasis}</p>
-                    <p className={styles.historicalSummary}><strong>Whether those reasons still apply now:</strong> {s.comparison.platformOutcomeComparison.applicabilityToCurrent}</p>
-                    <p className={styles.historicalSummary}><strong>Why the deterministic engine reached the current recommendation:</strong> {s.comparison.platformOutcomeComparison.deterministicDecisionContext}</p>
-                    <div className={styles.historicalSubheading}>The strongest contributing factors were:</div>
-                    <ul className={styles.historicalList}>
-                      {s.comparison.platformOutcomeComparison.strongestContributingFactors.map((item, idx) => (
-                        <li key={`sf-${idx}`}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
+                      <div className={styles.historicalComparisonSection}>
+                        <strong className={styles.historicalComparisonHeading}>Interpretation of similarity score</strong>
+                        <p className={styles.sectionExplanation}>{s.comparison.similarityInterpretation}</p>
+                        <p className={styles.sectionExplanation}>{s.comparison.overallScoreDerivation}</p>
+                      </div>
+
+                      <div className={styles.historicalComparisonSection}>
+                        <strong className={styles.historicalComparisonHeading}>What specifically matched</strong>
+                        <ul className={styles.historicalList}>
+                          {Object.values(s.comparison.matched).flat().filter(Boolean).slice(0, 8).map((item, idx) => <li key={`match-${idx}`}>{item}</li>)}
+                        </ul>
+                      </div>
+
+                      <div className={styles.historicalComparisonSection}>
+                        <strong className={styles.historicalComparisonHeading}>What specifically did not match</strong>
+                        <ul className={styles.historicalList}>
+                          {Object.values(s.comparison.notMatched).flat().filter(Boolean).slice(0, 8).map((item, idx) => <li key={`diff-${idx}`}>{item}</li>)}
+                        </ul>
+                      </div>
+
+                      <div className={styles.historicalComparisonSection}>
+                        <strong className={styles.historicalComparisonHeading}>Why similarity is not higher</strong>
+                        <p className={styles.sectionExplanation}>{s.comparison.whyScoreNotHigher.summary}</p>
+                        <ul className={styles.historicalList}>
+                          {s.comparison.whyScoreNotHigher.topContributors.map((item, idx) => <li key={`why-${idx}`}>{item}</li>)}
+                        </ul>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
