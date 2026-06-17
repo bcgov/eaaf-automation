@@ -179,16 +179,34 @@ function kcCls(level: string, s: Record<string, string>) {
   return s.kcLow;
 }
 
-function Section({ title, badge, defaultOpen = true, children }: { title: string; badge?: string; defaultOpen?: boolean; children: React.ReactNode }) {
+function SubSection({ title, badge, defaultOpen = false, children }: { title: string; badge?: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className={styles.section}>
-      <button className={styles.sectionHeader} onClick={() => setOpen(o => !o)}>
+    <div className={`${styles.subSection} ${open ? styles.subSectionOpen : ""}`}>
+      <button type="button" className={styles.subSectionHeader} onClick={() => setOpen(o => !o)} aria-expanded={open}>
+        <span className={styles.subSectionTitle}>{title}</span>
+        {badge && <span className={styles.subSectionBadge}>{badge}</span>}
+        <span className={styles.subSectionChevron}>{open ? "▲" : "▼"}</span>
+      </button>
+      <div className={`${styles.subSectionBodyWrap} ${open ? styles.openBody : styles.closedBody}`}>
+        <div className={styles.subSectionBody}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, badge, defaultOpen = false, children }: { title: string; badge?: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className={`${styles.section} ${open ? styles.sectionOpen : ""}`}>
+      <button type="button" className={styles.sectionHeader} onClick={() => setOpen(o => !o)} aria-expanded={open}>
         <span className={styles.sectionTitle}>{title}</span>
         {badge && <span className={styles.sectionBadge}>{badge}</span>}
         <span className={styles.sectionChevron}>{open ? "▲" : "▼"}</span>
       </button>
-      {open && <div className={styles.sectionBody}>{children}</div>}
+      <div className={`${styles.sectionBodyWrap} ${open ? styles.openBody : styles.closedBody}`}>
+        <div className={styles.sectionBody}>{children}</div>
+      </div>
     </div>
   );
 }
@@ -360,7 +378,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       </div>
 
       {/* 1 — ASSESSMENT OVERVIEW */}
-      <Section title="1 — Assessment Overview" badge="Scope and Context">
+      <Section title="1 — Assessment Overview" badge="Scope and Context" defaultOpen={false}>
         <div className={styles.overviewBlock}>
           <p className={styles.overviewNarrative}>
             This Enterprise Architecture Assessment evaluated platform options for <strong>{assessmentMeta?.name}</strong>.{assessmentMeta?.businessContext ? ` ${assessmentMeta.businessContext}` : ""}
@@ -376,14 +394,10 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       </Section>
 
       {/* 2 — ASSESSMENT JOURNEY */}
-      <Section title="2 — Assessment Journey" badge={`${confidenceBreakdown?.totalAnswered ?? 0} of ${confidenceBreakdown?.totalQuestions ?? 0} questions answered`} defaultOpen={true}>
+      <Section title="2 — Assessment Journey" badge={`${confidenceBreakdown?.totalAnswered ?? 0} of ${confidenceBreakdown?.totalQuestions ?? 0} questions answered`} defaultOpen={false}>
         <p className={styles.logicIntro}>The following four evaluation stages were completed as part of this assessment. Each stage collected architect responses against defined factors and sub-factors. Findings indicate how each stage influenced the final recommendation.</p>
         {stepsWithData?.map(step => (
-          <div key={step.stepKey} className={styles.journeyStep}>
-            <div className={styles.journeyStepHeader}>
-              <span className={styles.journeyStepName}>{step.stepName}</span>
-              <span className={styles.journeyStepCount}>{step.answeredCount} of {step.totalQuestions} questions answered</span>
-            </div>
+          <SubSection key={step.stepKey} title={step.stepName} badge={`${step.answeredCount} of ${step.totalQuestions} answered`} defaultOpen={false}>
             <div className={styles.factorSection}>
               {step.factors.map(f => (
                 <div key={f.id} className={styles.factorBlock}>
@@ -407,146 +421,80 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
                 ))}
               </div>
             )}
-            {step.answeredCount > 0 ? null : (
+            {step.answeredCount === 0 && (
               <div className={styles.stageSkipped}>No responses collected for this stage — stage was not evaluated.</div>
             )}
-          </div>
+          </SubSection>
         ))}
       </Section>
 
       {/* 3 — ASSESSMENT SIGNALS AND SCORING EVIDENCE */}
-      <Section title="3 — Assessment Signals and Scoring Evidence" badge={`${allSignals.length} signal${allSignals.length === 1 ? "" : "s"}`} defaultOpen={true}>
+      <Section title="3 — Assessment Signals and Scoring Evidence" badge={`${allSignals.length} signal${allSignals.length === 1 ? "" : "s"}`} defaultOpen={false}>
         <p className={styles.logicIntro}>
           Full scoring evidence is shown below. Assessment Metadata signals are listed separately, followed by stage-based assessment signals. Each signal includes response evidence, interpretation, why it matters, and platform impact.
         </p>
 
         {metadataSignals.length > 0 && (
-          <>
-            <h4 className={styles.sectionSubtitle}>Assessment Metadata Signals</h4>
-            <p className={styles.sectionExplanation}>
-              These signals come from Business Context, Business Goals, Business Drivers, and Business Requirement fields captured before question-level scoring.
-            </p>
-          </>
-        )}
-        {metadataSignals.map((sig, i) => (
-          <div key={`meta-${i}`} className={styles.signalCard}>
-            <div className={styles.signalHeader}>
-              <div className={styles.signalMeta}>
-                <span className={styles.signalStage}>{sig.stageName}</span>
-                <span className={styles.signalSep}>›</span>
-                <span className={styles.signalFactor}>{sig.factorName}</span>
-              </div>
-              <div className={styles.signalName}>{sig.signalName}</div>
-            </div>
-            <div className={styles.signalBody}>
-              <div className={styles.signalRow}>
-                <div className={styles.signalRowLabel}>Response Evidence</div>
-                <div className={styles.signalEvidence}>&quot;{sig.responseEvidence}&quot;</div>
-              </div>
-              <div className={styles.signalRow}>
-                <div className={styles.signalRowLabel}>Architectural Interpretation</div>
-                <div className={styles.signalText}>{sig.architecturalInterpretation}</div>
-              </div>
-              <div className={styles.signalRow}>
-                <div className={styles.signalRowLabel}>Why This Matters</div>
-                <div className={styles.signalText}>{sig.whyItMatters}</div>
-              </div>
-              <div className={styles.signalRow}>
-                <div className={styles.signalRowLabel}>Platform Impact</div>
-                <div className={styles.platformImpactList}>
-                  {sig.platformRationale.map((pr, j) => (
-                    <div key={j} className={`${styles.platformImpactItem} ${pr.points > 0 ? styles.impactPos : styles.impactNeg}`}>
-                      <span className={styles.impactPts}>{pr.points > 0 ? `+${pr.points}` : pr.points} pts</span>
-                      <span className={styles.impactPlatform}>{pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform}</span>
-                      <span className={styles.impactReason}>{pr.reasoning}</span>
-                    </div>
-                  ))}
-                  {PLATFORM_ORDER
-                    .filter((platform) => !sig.platformRationale.some((pr) => pr.platform === platform))
-                    .map((platform, j) => {
-                      const favoredPlatforms = sig.platformRationale
-                        .filter((pr) => pr.points > 0)
-                        .map((pr) => pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform)
-                        .join(", ");
-                      return (
-                        <div key={`meta-unmatched-${j}`} className={`${styles.platformImpactItem} ${styles.impactNeg}`}>
-                          <span className={styles.impactPts}>0 pts</span>
-                          <span className={styles.impactPlatform}>{platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : platform}</span>
-                          <span className={styles.impactReason}>
-                            Not matched for this signal. Response evidence aligned more strongly with {favoredPlatforms || "other platform criteria"}.
-                          </span>
+          <SubSection title="Assessment Metadata Signals" badge={`${metadataSignals.length}`} defaultOpen={false}>
+            <p className={styles.sectionExplanation}>These signals come from Business Context, Business Goals, Business Drivers, and Business Requirement fields captured before question-level scoring.</p>
+            {metadataSignals.map((sig, i) => (
+              <SubSection key={`meta-${i}`} title={sig.signalName} badge={`${sig.stageName} › ${sig.factorName}`} defaultOpen={false}>
+                <div className={styles.signalBody}>
+                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Response Evidence</div><div className={styles.signalEvidence}>&quot;{sig.responseEvidence}&quot;</div></div>
+                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Architectural Interpretation</div><div className={styles.signalText}>{sig.architecturalInterpretation}</div></div>
+                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Why This Matters</div><div className={styles.signalText}>{sig.whyItMatters}</div></div>
+                  <div className={styles.signalRow}>
+                    <div className={styles.signalRowLabel}>Platform Impact</div>
+                    <div className={styles.platformImpactList}>
+                      {sig.platformRationale.map((pr, j) => (
+                        <div key={j} className={`${styles.platformImpactItem} ${pr.points > 0 ? styles.impactPos : styles.impactNeg}`}>
+                          <span className={styles.impactPts}>{pr.points > 0 ? `+${pr.points}` : pr.points} pts</span>
+                          <span className={styles.impactPlatform}>{pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform}</span>
+                          <span className={styles.impactReason}>{pr.reasoning}</span>
                         </div>
-                      );
-                    })}
+                      ))}
+                      {PLATFORM_ORDER.filter(p => !sig.platformRationale.some(pr => pr.platform === p)).map((platform, j) => {
+                        const favored = sig.platformRationale.filter(pr => pr.points > 0).map(pr => pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform).join(", ");
+                        return (<div key={`mu-${j}`} className={`${styles.platformImpactItem} ${styles.impactNeg}`}><span className={styles.impactPts}>0 pts</span><span className={styles.impactPlatform}>{platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : platform}</span><span className={styles.impactReason}>Not matched for this signal. Response evidence aligned more strongly with {favored || "other platform criteria"}.</span></div>);
+                      })}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        ))}
+              </SubSection>
+            ))}
+          </SubSection>
+        )}
 
-        {journeySignals.length > 0 && (
-          <>
-            <h4 className={styles.sectionSubtitle}>Stage-Based Assessment Signals</h4>
-            <p className={styles.sectionExplanation}>
-              These signals are derived from Architecture, Cloud, Platform, and Operational stage responses.
-            </p>
-          </>
-        )}
-        {journeySignals.length > 0 ? journeySignals.map((sig, i) => (
-          <div key={i} className={styles.signalCard}>
-            <div className={styles.signalHeader}>
-              <div className={styles.signalMeta}>
-                <span className={styles.signalStage}>{sig.stageName}</span>
-                <span className={styles.signalSep}>›</span>
-                <span className={styles.signalFactor}>{sig.factorName}</span>
-              </div>
-              <div className={styles.signalName}>{sig.signalName}</div>
-            </div>
-            <div className={styles.signalBody}>
-              <div className={styles.signalRow}>
-                <div className={styles.signalRowLabel}>Response Evidence</div>
-                <div className={styles.signalEvidence}>&quot;{sig.responseEvidence}&quot;</div>
-              </div>
-              <div className={styles.signalRow}>
-                <div className={styles.signalRowLabel}>Architectural Interpretation</div>
-                <div className={styles.signalText}>{sig.architecturalInterpretation}</div>
-              </div>
-              <div className={styles.signalRow}>
-                <div className={styles.signalRowLabel}>Why This Matters</div>
-                <div className={styles.signalText}>{sig.whyItMatters}</div>
-              </div>
-              <div className={styles.signalRow}>
-                <div className={styles.signalRowLabel}>Platform Impact</div>
-                <div className={styles.platformImpactList}>
-                  {sig.platformRationale.map((pr, j) => (
-                    <div key={j} className={`${styles.platformImpactItem} ${pr.points > 0 ? styles.impactPos : styles.impactNeg}`}>
-                      <span className={styles.impactPts}>{pr.points > 0 ? `+${pr.points}` : pr.points} pts</span>
-                      <span className={styles.impactPlatform}>{pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform}</span>
-                      <span className={styles.impactReason}>{pr.reasoning}</span>
-                    </div>
-                  ))}
-                  {PLATFORM_ORDER
-                    .filter((platform) => !sig.platformRationale.some((pr) => pr.platform === platform))
-                    .map((platform, j) => {
-                      const favoredPlatforms = sig.platformRationale
-                        .filter((pr) => pr.points > 0)
-                        .map((pr) => pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform)
-                        .join(", ");
-                      return (
-                        <div key={`journey-unmatched-${j}`} className={`${styles.platformImpactItem} ${styles.impactNeg}`}>
-                          <span className={styles.impactPts}>0 pts</span>
-                          <span className={styles.impactPlatform}>{platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : platform}</span>
-                          <span className={styles.impactReason}>
-                            Not matched for this signal. Response evidence aligned more strongly with {favoredPlatforms || "other platform criteria"}.
-                          </span>
+        {journeySignals.length > 0 ? (
+          <SubSection title="Stage-Based Assessment Signals" badge={`${journeySignals.length}`} defaultOpen={false}>
+            <p className={styles.sectionExplanation}>These signals are derived from Architecture, Cloud, Platform, and Operational stage responses.</p>
+            {journeySignals.map((sig, i) => (
+              <SubSection key={i} title={sig.signalName} badge={`${sig.stageName} › ${sig.factorName}`} defaultOpen={false}>
+                <div className={styles.signalBody}>
+                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Response Evidence</div><div className={styles.signalEvidence}>&quot;{sig.responseEvidence}&quot;</div></div>
+                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Architectural Interpretation</div><div className={styles.signalText}>{sig.architecturalInterpretation}</div></div>
+                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Why This Matters</div><div className={styles.signalText}>{sig.whyItMatters}</div></div>
+                  <div className={styles.signalRow}>
+                    <div className={styles.signalRowLabel}>Platform Impact</div>
+                    <div className={styles.platformImpactList}>
+                      {sig.platformRationale.map((pr, j) => (
+                        <div key={j} className={`${styles.platformImpactItem} ${pr.points > 0 ? styles.impactPos : styles.impactNeg}`}>
+                          <span className={styles.impactPts}>{pr.points > 0 ? `+${pr.points}` : pr.points} pts</span>
+                          <span className={styles.impactPlatform}>{pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform}</span>
+                          <span className={styles.impactReason}>{pr.reasoning}</span>
                         </div>
-                      );
-                    })}
+                      ))}
+                      {PLATFORM_ORDER.filter(p => !sig.platformRationale.some(pr => pr.platform === p)).map((platform, j) => {
+                        const favored = sig.platformRationale.filter(pr => pr.points > 0).map(pr => pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform).join(", ");
+                        return (<div key={`ju-${j}`} className={`${styles.platformImpactItem} ${styles.impactNeg}`}><span className={styles.impactPts}>0 pts</span><span className={styles.impactPlatform}>{platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : platform}</span><span className={styles.impactReason}>Not matched for this signal. Response evidence aligned more strongly with {favored || "other platform criteria"}.</span></div>);
+                      })}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        )) : (
+              </SubSection>
+            ))}
+          </SubSection>
+        ) : (
           <div className={styles.noSignals}>No assessment signals were detected. Ensure substantive responses have been entered for all stages before generating this report.</div>
         )}
       </Section>
@@ -559,7 +507,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
             const ps = platformScores.find(s => s.platform === p);
             const isWinner = p === rec.platform;
             return (
-              <div key={p} className={`${styles.platformCard} ${isWinner ? styles.platformWinnerCard : ""}`}>
+              <SubSection key={p} title={`${PLATFORM_DISPLAY[p]}${isWinner ? " — RECOMMENDED" : ""}`} badge={`${score}/100`} defaultOpen={isWinner}>
                 <div className={styles.platformCardHeader}>
                   <span className={styles.platformCardName}>{PLATFORM_DISPLAY[p]}</span>
                   {isWinner && <span className={styles.winnerTag}>RECOMMENDED</span>}
@@ -617,14 +565,13 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
                   ) : null;
                 })()}
                 {!isWinner && <div className={styles.notSelectedNote}>Not selected: {score === 0 ? "No assessment signals aligned with this platform." : `Suitability score (${score}/100) was lower than the recommended platform.`}</div>}
-              </div>
+              </SubSection>
             );
           })}
         </div>
 
         {hasOtherFactors && rec.aiStrategicAssessment && (
-          <div className={styles.otherFactorsSection}>
-            <h4 className={styles.sectionSubtitle}>Other Factors</h4>
+          <SubSection title="Other Factors" badge="Context only" defaultOpen={false}>
             <p className={styles.sectionExplanation}>
               The following contextual factors help explain delivery fit after the ranked platform assessment above has already been completed. They do not change the platform ranking or scoring outcome.
             </p>
@@ -693,7 +640,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
                 <ul>{rec.aiStrategicAssessment!.riskWarnings.map((w, i) => <li key={i}>{w}</li>)}</ul>
               </div>
             )}
-          </div>
+          </SubSection>
         )}
       </Section>
 
@@ -748,89 +695,76 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       {/* 6 — HISTORICAL SIMILARITY EVIDENCE */}
       <Section title="6 — Historical Similarity Evidence" badge="Context Only" defaultOpen={false}>
         <div className={styles.historicalSimilaritySection}>
-          <h4 className={styles.sectionSubtitle}>Historical Assessment Similarity</h4>
           <p className={styles.sectionExplanation}>
             Historical assessment data from prior architecture evaluations is shown here as context only. It does not alter the deterministic recommendation above.
           </p>
           {historicalPrecedentMatches?.length > 0 ? (
             <div className={styles.historicalSimilarityCards}>
               {historicalPrecedentMatches.map((s, i) => (
-                <div key={i} className={styles.historicalCard}>
-                  <div className={styles.historicalCardHeader}>
-                    <span className={styles.historicalCardName}>{s.name}</span>
-                    <span className={styles.historicalCardSimilarity}>{s.similarityScore}% similar</span>
-                  </div>
-                  <div className={styles.historicalCardRow}>
-                    <span className={styles.historicalCardLabel}>Prior Platform Selected:</span>
-                    <span className={styles.historicalCardValue}>{normalizePlatformLabel(s.platform)}</span>
-                  </div>
-                  <div className={styles.historicalCardRow}>
-                    <span className={styles.historicalCardLabel}>Business Context:</span>
-                    <span className={styles.historicalCardValue}>{s.businessContext}</span>
-                  </div>
-                  <div className={styles.historicalCardRow}>
-                    <span className={styles.historicalCardLabel}>Primary Goal:</span>
-                    <span className={styles.historicalCardValue}>{s.businessGoal}</span>
-                  </div>
-                  <div className={styles.historicalCardRow}>
-                    <span className={styles.historicalCardLabel}>Business Alignment:</span>
-                    <span className={styles.historicalCardValue}>{s.businessDriver}</span>
-                  </div>
-                  <div className={styles.historicalCardRow}>
-                    <span className={styles.historicalCardLabel}>Business Requirement:</span>
-                    <span className={styles.historicalCardValue}>{s.businessRequirement}</span>
-                  </div>
+                <SubSection key={i} title={s.name} badge={`${s.similarityScore}% similar · ${normalizePlatformLabel(s.platform)}`} defaultOpen={false}>
+                  <div className={styles.historicalCardRow}><span className={styles.historicalCardLabel}>Prior Platform Selected:</span><span className={styles.historicalCardValue}>{normalizePlatformLabel(s.platform)}</span></div>
+                  <div className={styles.historicalCardRow}><span className={styles.historicalCardLabel}>Business Context:</span><span className={styles.historicalCardValue}>{s.businessContext}</span></div>
+                  <div className={styles.historicalCardRow}><span className={styles.historicalCardLabel}>Primary Goal:</span><span className={styles.historicalCardValue}>{s.businessGoal}</span></div>
+                  <div className={styles.historicalCardRow}><span className={styles.historicalCardLabel}>Business Alignment:</span><span className={styles.historicalCardValue}>{s.businessDriver}</span></div>
+                  <div className={styles.historicalCardRow}><span className={styles.historicalCardLabel}>Business Requirement:</span><span className={styles.historicalCardValue}>{s.businessRequirement}</span></div>
                   {s.topMatchedThemes?.length > 0 && (
-                    <div className={styles.historicalComparisonSection}>
-                      <strong className={styles.historicalComparisonHeading}>Top matched themes</strong>
-                      <ul className={styles.historicalList}>
-                        {s.topMatchedThemes.map((item, idx) => <li key={`tm-${idx}`}>{item}</li>)}
-                      </ul>
-                    </div>
+                    <SubSection title="Top matched themes" defaultOpen={false}>
+                      <ul className={styles.historicalList}>{s.topMatchedThemes.map((item, idx) => <li key={`tm-${idx}`}>{item}</li>)}</ul>
+                    </SubSection>
                   )}
                   {s.comparison && (
                     <>
-                      <div className={styles.historicalComparisonSection}>
-                        <strong className={styles.historicalComparisonHeading}>Similarity score derivation by category</strong>
-                        <ul className={styles.historicalList}>
-                          {s.comparison.scoreByCategory.map((item, idx) => (
-                            <li key={`cat-${idx}`}>
-                              <strong>{item.category}</strong> ({item.weight}%): {item.status === "unavailable" ? "Unavailable - excluded from weighted score" : `${item.score}/100`}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div className={styles.historicalComparisonSection}>
-                        <strong className={styles.historicalComparisonHeading}>Interpretation of similarity score</strong>
+                      <SubSection title="Similarity score derivation by category" defaultOpen={false}>
+                        {s.comparison.scoreByCategory.map((item, idx) => (
+                          <div key={`cat-${idx}`} className={styles.categoryScoreBlock}>
+                            <div className={styles.categoryScoreHeader}>
+                              <span className={styles.categoryScoreName}>{item.category}</span>
+                              <span className={styles.categoryScoreWeight}>weight {item.weight}%</span>
+                              <span className={item.status === "unavailable" ? styles.categoryScoreUnavailable : styles.categoryScoreValue}>
+                                {item.status === "unavailable" ? "Unavailable — excluded from weighted score" : `${item.score}/100`}
+                              </span>
+                            </div>
+                            {item.matchedRationale.length > 0 && (
+                              <ul className={styles.categoryScoreDetail}>
+                                {item.matchedRationale.map((r, i) => (
+                                  <li key={`mr-${i}`} className={styles.categoryScoreMatch}>&#10003; {r}</li>
+                                ))}
+                              </ul>
+                            )}
+                            {item.differentiators.length > 0 && (
+                              <ul className={styles.categoryScoreDetail}>
+                                {item.differentiators.map((r, i) => (
+                                  <li key={`df-${i}`} className={styles.categoryScoreDiff}>&#8594; {r}</li>
+                                ))}
+                              </ul>
+                            )}
+                            {item.reductionDrivers.length > 0 && (
+                              <ul className={styles.categoryScoreDetail}>
+                                {item.reductionDrivers.map((r, i) => (
+                                  <li key={`rd-${i}`} className={styles.categoryScoreReduction}>&#9660; {r}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                      </SubSection>
+                      <SubSection title="Interpretation of similarity score" defaultOpen={false}>
                         <p className={styles.sectionExplanation}>{s.comparison.similarityInterpretation}</p>
                         <p className={styles.sectionExplanation}>{s.comparison.overallScoreDerivation}</p>
-                      </div>
-
-                      <div className={styles.historicalComparisonSection}>
-                        <strong className={styles.historicalComparisonHeading}>What specifically matched</strong>
-                        <ul className={styles.historicalList}>
-                          {Object.values(s.comparison.matched).flat().filter(Boolean).slice(0, 8).map((item, idx) => <li key={`match-${idx}`}>{item}</li>)}
-                        </ul>
-                      </div>
-
-                      <div className={styles.historicalComparisonSection}>
-                        <strong className={styles.historicalComparisonHeading}>What specifically did not match</strong>
-                        <ul className={styles.historicalList}>
-                          {Object.values(s.comparison.notMatched).flat().filter(Boolean).slice(0, 8).map((item, idx) => <li key={`diff-${idx}`}>{item}</li>)}
-                        </ul>
-                      </div>
-
-                      <div className={styles.historicalComparisonSection}>
-                        <strong className={styles.historicalComparisonHeading}>Why similarity is not higher</strong>
+                      </SubSection>
+                      <SubSection title="What specifically matched" defaultOpen={false}>
+                        <ul className={styles.historicalList}>{Object.values(s.comparison.matched).flat().filter(Boolean).slice(0, 8).map((item, idx) => <li key={`match-${idx}`}>{item}</li>)}</ul>
+                      </SubSection>
+                      <SubSection title="What specifically did not match" defaultOpen={false}>
+                        <ul className={styles.historicalList}>{Object.values(s.comparison.notMatched).flat().filter(Boolean).slice(0, 8).map((item, idx) => <li key={`diff-${idx}`}>{item}</li>)}</ul>
+                      </SubSection>
+                      <SubSection title="Why similarity is not higher" defaultOpen={false}>
                         <p className={styles.sectionExplanation}>{s.comparison.whyScoreNotHigher.summary}</p>
-                        <ul className={styles.historicalList}>
-                          {s.comparison.whyScoreNotHigher.topContributors.map((item, idx) => <li key={`why-${idx}`}>{item}</li>)}
-                        </ul>
-                      </div>
+                        <ul className={styles.historicalList}>{s.comparison.whyScoreNotHigher.topContributors.map((item, idx) => <li key={`why-${idx}`}>{item}</li>)}</ul>
+                      </SubSection>
                     </>
                   )}
-                </div>
+                </SubSection>
               ))}
             </div>
           ) : (
@@ -845,7 +779,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       </Section>
 
       {/* 7 — DECISION CONFIDENCE CLASSIFICATION */}
-      <Section title="7 — Decision Confidence Classification" badge="Governance Interpretation" defaultOpen={true}>
+      <Section title="7 — Decision Confidence Classification" badge="Governance Interpretation" defaultOpen={false}>
         <div className={styles.confidenceClassification}>
           <p className={styles.ccIntro}>
             This classification synthesizes the strength of deterministic decision engine output with the depth of historical assessment precedent available. This classification is for governance interpretation and transparency only and does not affect the platform selection above.

@@ -1,11 +1,8 @@
 import { Platform, PLATFORM_DISPLAY } from "@/lib/deterministic/engine";
 
-// ─── Static Canadian public sector platform knowledge ─────────────────────────
-// Used when similarity search has insufficient deterministic signal to produce a
-// decisive ranking. These pros/cons and use-case nudges reflect real-world
-// BC Government / Canadian public sector experience.
-
-export interface PlatformProfile {
+// Static Canadian public sector platform knowledge used when assessment signal
+// is too sparse for a decisive similarity-supported recommendation.
+export interface InstitutionalKnowledgePlatformProfile {
   platform: Platform;
   displayName: string;
   pros: string[];
@@ -14,17 +11,17 @@ export interface PlatformProfile {
   canadianContext: string;
 }
 
-export interface LowSignalReport {
+export interface InstitutionalKnowledgeLowSignalReport {
   historySuggestion: string | null;
   historyConfidence: number;
   nudgedRecommendation: Platform;
   nudgedRationale: string;
   overallConfidence: number;
-  platformProfiles: PlatformProfile[];
+  platformProfiles: InstitutionalKnowledgePlatformProfile[];
   caveat: string;
 }
 
-export const PLATFORM_PROFILES: PlatformProfile[] = [
+export const INSTITUTIONAL_KNOWLEDGE_PLATFORM_PROFILES: InstitutionalKnowledgePlatformProfile[] = [
   {
     platform: "Salesforce",
     displayName: PLATFORM_DISPLAY["Salesforce"],
@@ -59,7 +56,7 @@ export const PLATFORM_PROFILES: PlatformProfile[] = [
       "Robust reporting and SLA management",
     ],
     cons: [
-      "Limited native CRM depth — not designed for citizen-facing case management",
+      "Limited native CRM depth - not designed for citizen-facing case management",
       "Significant implementation effort and specialist skills required",
       "Higher cost relative to value when CRM is the primary need",
       "Less ecosystem depth for health and social services use cases",
@@ -78,17 +75,17 @@ export const PLATFORM_PROFILES: PlatformProfile[] = [
       "Power Apps and Power Automate enable rapid low-code delivery",
       "Power Platform provides lightweight case and workflow capabilities",
       "Azure Government Cloud available in Canadian data regions",
-      "Strong citizen developer ecosystem — business teams can self-serve",
+      "Strong citizen developer ecosystem - business teams can self-serve",
     ],
     cons: [
-      "Governance challenges at scale — citizen development can create shadow IT",
+      "Governance challenges at scale - citizen development can create shadow IT",
       "Premium connectors required for enterprise integration add cost",
       "Less mature than Salesforce for complex case management",
       "Platform fragmentation risk across Power Apps, Dynamics, and Azure services",
     ],
     bestFitFor: "Rapid application delivery, internal staff tools, low-code process automation, lightweight case management, survey and forms workloads",
     canadianContext:
-      "BC Government holds an enterprise M365 agreement covering all ministries — Teams, SharePoint, and M365 Copilot are already deployed. " +
+      "BC Government holds an enterprise M365 agreement covering all ministries - Teams, SharePoint, and M365 Copilot are already deployed. " +
       "Power Platform (Power Apps, Power Automate, Power BI) is included within most existing M365 E3/E5 licence tiers at no significant incremental cost. " +
       "For internal staff-facing tools, surveys, forms, and lightweight workflow, Power Platform is the lowest-cost path because the licence is already paid. " +
       "Complex CRM/case workloads may require additional licensing but can remain cheaper than Salesforce at typical BC Gov scale. " +
@@ -105,9 +102,9 @@ export const PLATFORM_PROFILES: PlatformProfile[] = [
     ],
     cons: [
       "Highest total cost of ownership: development, testing, ops, security patching",
-      "Longest time to value — typically 2–3x slower than SaaS adoption",
+      "Longest time to value - typically 2-3x slower than SaaS adoption",
       "Requires sustained internal or partner development capacity",
-      "No vendor roadmap — all capability investment falls on the organisation",
+      "No vendor roadmap - all capability investment falls on the organisation",
       "OCIO cloud-first and SaaS-first directives require explicit justification",
     ],
     bestFitFor: "Highly specialised or differentiating capabilities with no SaaS equivalent; where IP ownership is a strategic requirement",
@@ -117,12 +114,15 @@ export const PLATFORM_PROFILES: PlatformProfile[] = [
   },
 ];
 
-type NudgeResult = {
+type InstitutionalKnowledgeNudgeResult = {
   platform: Platform;
   costRationale: string;
 };
 
-function nudgeFromContext(businessContext: string, businessRequirement: string): NudgeResult {
+function nudgeFromInstitutionalKnowledgeContext(
+  businessContext: string,
+  businessRequirement: string
+): InstitutionalKnowledgeNudgeResult {
   const text = `${businessContext} ${businessRequirement}`.toLowerCase();
 
   if (
@@ -133,7 +133,7 @@ function nudgeFromContext(businessContext: string, businessRequirement: string):
       costRationale:
         "BC Government holds an enterprise M365 agreement. Power Platform (Power Apps, Power Automate) " +
         "is included within existing E3/E5 licences at no significant incremental cost. " +
-        "For an internal staff-facing use case this is the lowest-cost option — the licence is already paid.",
+        "For an internal staff-facing use case this is the lowest-cost option - the licence is already paid.",
     };
   }
 
@@ -163,13 +163,16 @@ function nudgeFromContext(businessContext: string, businessRequirement: string):
   };
 }
 
-export function buildInsufficientSignalReport(
+export function buildInstitutionalKnowledgeLowSignalReport(
   historySuggestion: string | null,
   historyConfidence: number,
   businessContext: string,
   businessRequirement: string
-): LowSignalReport {
-  const { platform: nudged, costRationale } = nudgeFromContext(businessContext, businessRequirement);
+): InstitutionalKnowledgeLowSignalReport {
+  const { platform: nudged, costRationale } = nudgeFromInstitutionalKnowledgeContext(
+    businessContext,
+    businessRequirement
+  );
   const historyLabel = historySuggestion
     ? `From history, ${historySuggestion} was recommended at ${historyConfidence}% confidence. `
     : "No sufficiently similar historical assessments exist to draw from. ";
@@ -178,7 +181,7 @@ export function buildInsufficientSignalReport(
     `${historyLabel}` +
     `Factoring in the broader Canadian public sector context: ${costRationale} ` +
     `${PLATFORM_DISPLAY[nudged]} is the indicative suggested platform. ` +
-    `Overall confidence remains low — complete all five assessment steps with substantive responses to produce a reliable recommendation.`;
+    `Overall confidence remains low - complete all five assessment steps with substantive responses to produce a reliable recommendation.`;
 
   return {
     historySuggestion,
@@ -186,7 +189,7 @@ export function buildInsufficientSignalReport(
     nudgedRecommendation: nudged,
     nudgedRationale,
     overallConfidence: Math.min(historyConfidence > 0 ? 30 : 20, 35),
-    platformProfiles: PLATFORM_PROFILES,
+    platformProfiles: INSTITUTIONAL_KNOWLEDGE_PLATFORM_PROFILES,
     caveat:
       "Confidence is intentionally capped at low because assessment responses are insufficient. " +
       "Add substantive responses across all five steps to produce a reliable recommendation.",

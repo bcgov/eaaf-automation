@@ -1,4 +1,4 @@
-import { PLATFORM_PROFILES } from "@/lib/deterministic/insufficient-signal-low-signal-report";
+import { INSTITUTIONAL_KNOWLEDGE_PLATFORM_PROFILES } from "@/lib/deterministic/institutional-knowledge-low-signal-report";
 import { RecommendationResult } from "@/lib/deterministic/engine";
 
 export interface AssembledRecommendation {
@@ -29,7 +29,7 @@ export async function assembleRecommendationDocument(
       ? similarAssessments.map((s) => `${s.name} (${Math.round(s.similarity)}% similar)`).join(", ")
       : null;
 
-  const platformProfile = PLATFORM_PROFILES.find((p) => p.platform === recommendation.platform);
+  const platformProfile = INSTITUTIONAL_KNOWLEDGE_PLATFORM_PROFILES.find((p) => p.platform === recommendation.platform);
 
   return {
     summary: `This Enterprise Architecture Assessment evaluated ${assessmentName} against BC Government platform standards. The recommended platform is ${recommendation.displayName}, which aligns best with stated business requirements and organizational readiness. Confidence: ${recommendation.confidenceScore}%.${similarContext ? ` Similar historical assessments: ${similarContext}.` : ""}`,

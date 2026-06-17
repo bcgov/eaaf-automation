@@ -54,7 +54,20 @@ interface HistoricalComparison {
   };
 }
 
-let semanticCategoryServiceUnavailable = false;
+// Circuit breaker: if the local embedding service is unavailable, skip semantic calls for
+// CIRCUIT_BREAKER_RESET_MS milliseconds before retrying. This prevents hammering a down
+// service with 8 failing calls per comparison pair, but also auto-resets so that when the
+// service comes back up the next Regenerate will use real semantic scores again.
+const CIRCUIT_BREAKER_RESET_MS = 60_000; // 60 seconds
+let semanticServiceUnavailableUntil = 0;
+
+function isSemanticServiceCircuitOpen(): boolean {
+  return Date.now() < semanticServiceUnavailableUntil;
+}
+
+function tripSemanticServiceCircuit(): void {
+  semanticServiceUnavailableUntil = Date.now() + CIRCUIT_BREAKER_RESET_MS;
+}
 
 interface HistoryRow {
   id: number;
@@ -273,7 +286,7 @@ async function computeSemanticCategorySimilarity(
     };
   };
 
-  if (semanticCategoryServiceUnavailable) {
+  if (isSemanticServiceCircuitOpen()) {
     return buildLexicalFallback();
   }
 
@@ -298,7 +311,7 @@ async function computeSemanticCategorySimilarity(
     return { score, status: "available", matchedRationale, differentiators, reductionDrivers };
   } catch (error) {
     if (error instanceof Error && error.message.includes("LOCAL_EMBEDDING_SERVICE_UNAVAILABLE:")) {
-      semanticCategoryServiceUnavailable = true;
+      tripSemanticServiceCircuit();
       return buildLexicalFallback();
     }
 

@@ -353,9 +353,10 @@ If you need to adjust scoring rules or platform data, edit these files:
 |------|--------------|---------|
 | `lib/deterministic/engine.ts` | `SCORING_RULES` array | Add keyword triggers for platforms |
 | `lib/deterministic/scoring-signal-explanation-metadata.ts` | `SIGNAL_METADATA` object | Explain why each keyword matters |
-| `lib/deterministic/insufficient-signal-low-signal-report.ts` | `PLATFORM_PROFILES` array | Platform pros/cons/best fit text |
+| `lib/deterministic/institutional-knowledge-low-signal-report.ts` | `INSTITUTIONAL_KNOWLEDGE_PLATFORM_PROFILES` array | Platform pros/cons/best fit text |
 | `lib/deterministic/static-strategic-platform-fit-data.ts` | Readiness assessments | Timeline, team gaps, governance risk per platform |
-| `lib/deterministic/confidence-report.ts` | Confidence formulas | Adjust how confidence score is calculated |
+| `lib/deterministic/confidence-institutional-knowledge-report.ts` | Institutional confidence formulas | Adjust deterministic evidence confidence calculations |
+| `lib/deterministic/confidence-similarity-report.ts` | Similarity confidence formulas | Adjust historical alignment and similarity advisory confidence |
 
 ### Similarity Matching
 

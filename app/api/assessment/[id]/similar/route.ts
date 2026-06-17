@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { findSimilarAssessments, isSignalSufficient, SimilarAssessment } from "@/lib/similarity/engine";
-import { buildInsufficientSignalReport } from "@/lib/deterministic/insufficient-signal-low-signal-report";
+import { buildInstitutionalKnowledgeLowSignalReport } from "@/lib/deterministic/institutional-knowledge-low-signal-report";
 import db from "@/lib/db/db";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -41,7 +41,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       console.error("Error finding similar assessments for low-signal context:", error);
     }
 
-    const lowSignalReport = buildInsufficientSignalReport(
+    const lowSignalReport = buildInstitutionalKnowledgeLowSignalReport(
       null,
       0,
       assessment.business_context ?? "",

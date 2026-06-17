@@ -5,12 +5,14 @@ import { generateStrategicPlatformFitData } from "@/lib/deterministic/static-str
 import { findSimilarAssessments } from "@/lib/similarity/engine";
 import { buildScoringSignalExplanations } from "@/lib/deterministic/scoring-signal-explanation-metadata";
 import {
-  buildAiConfidence,
-  buildHistoricalAlignment,
-  buildInstitutionalConfidence,
-  buildKnowledgeCoverage,
-  detectConflictingIndicators,
-} from "@/lib/deterministic/confidence-report";
+  buildInstitutionalKnowledgeConfidence,
+  buildInstitutionalKnowledgeCoverage,
+  detectInstitutionalConfidenceConflictingIndicators,
+} from "@/lib/deterministic/confidence-institutional-knowledge-report";
+import {
+  buildSimilarityAdvisoryConfidence,
+  buildSimilarityHistoricalAlignment,
+} from "@/lib/deterministic/confidence-similarity-report";
 import db from "@/lib/db/db";
 
 const STEP_ORDER = [
@@ -184,14 +186,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       completenessPercent,
       rulesMatched,
       historicalMatchesFound: similarAssessments.length,
-      conflictingIndicators: detectConflictingIndicators(result),
+      conflictingIndicators: detectInstitutionalConfidenceConflictingIndicators(result),
     },
     // Knowledge coverage
-    knowledgeCoverage: buildKnowledgeCoverage(similarAssessments.length, rulesMatched, completenessPercent),
+    knowledgeCoverage: buildInstitutionalKnowledgeCoverage(similarAssessments.length, rulesMatched, completenessPercent),
     // Split confidence
-    institutionalConfidence: buildInstitutionalConfidence(result, rulesMatched, completenessPercent),
-    historicalAlignment: buildHistoricalAlignment(similarAssessments),
-    documentConfidence: buildAiConfidence(similarAssessments.length, completenessPercent, assessment.business_context),
+    institutionalConfidence: buildInstitutionalKnowledgeConfidence(result, rulesMatched, completenessPercent),
+    historicalAlignment: buildSimilarityHistoricalAlignment(similarAssessments),
+    documentConfidence: buildSimilarityAdvisoryConfidence(similarAssessments.length, completenessPercent, assessment.business_context),
     // Similar assessments
     historicalPrecedentMatches: similarAssessments,
     // Strategic platform fit
