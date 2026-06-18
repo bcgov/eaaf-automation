@@ -1,3 +1,5 @@
+import { EAAF_RULES } from "@/lib/deterministic/rules";
+
 export interface SimilarityConfidenceAssessmentContext {
   name: string;
   platform: string;
@@ -16,13 +18,14 @@ export function buildSimilarityHistoricalAlignment(
   retrievalMethod: string;
   nonDecisionalNote: string;
 } {
+  const cfg = EAAF_RULES.confidence.similarity.historicalAlignment;
   if (similarAssessments.length === 0) {
     return {
       matchCount: 0,
       nearestMatchScore: null,
       lowestMatchScore: null,
-      retrievalMethod: "embedding-cosine-similarity",
-      nonDecisionalNote: "No historical precedents were retrieved. This does not affect deterministic platform selection.",
+      retrievalMethod: cfg.retrievalMethod,
+      nonDecisionalNote: cfg.noHistoricalNote,
     };
   }
 
@@ -31,8 +34,8 @@ export function buildSimilarityHistoricalAlignment(
     matchCount: sorted.length,
     nearestMatchScore: sorted[0].similarityScore,
     lowestMatchScore: sorted[sorted.length - 1].similarityScore,
-    retrievalMethod: "embedding-cosine-similarity",
-    nonDecisionalNote: "Historical precedents are retrieval-only context and do not contribute to platform selection.",
+    retrievalMethod: cfg.retrievalMethod,
+    nonDecisionalNote: cfg.nonDecisionalNote,
   };
 }
 
@@ -46,43 +49,42 @@ export function buildSimilarityAdvisoryConfidence(
   basis: string;
   factors: string[];
 } {
+  const cfg = EAAF_RULES.confidence.similarity.advisoryConfidence;
   const factors: string[] = [];
-  let score = 50;
+  let score = cfg.base;
 
-  if (businessContext && businessContext.length > 100) {
-    score += 15;
+  if (businessContext && businessContext.length > cfg.businessContext.richLen) {
+    score += cfg.businessContext.richDelta;
     factors.push("Rich business context provided - AI advisory has strong context for analysis");
-  } else if (businessContext && businessContext.length > 20) {
-    score += 5;
+  } else if (businessContext && businessContext.length > cfg.businessContext.basicLen) {
+    score += cfg.businessContext.basicDelta;
     factors.push("Basic business context provided");
   } else {
-    score -= 10;
+    score += cfg.businessContext.lowDelta;
     factors.push("Limited business context - AI advisory is based primarily on response patterns");
   }
 
   if (historicalMatches >= 2) {
-    score += 15;
+    score += cfg.historicalMatches.twoPlusDelta;
     factors.push(`${historicalMatches} similar assessments available for pattern comparison`);
   } else if (historicalMatches === 1) {
-    score += 5;
+    score += cfg.historicalMatches.oneDelta;
     factors.push("1 historical assessment available for pattern reference");
   } else {
-    score -= 15;
+    score += cfg.historicalMatches.noneDelta;
     factors.push("No similar historical assessments - AI advisory cannot draw on precedent");
   }
 
-  if (completeness >= 80) {
-    score += 10;
+  if (completeness >= cfg.completeness.highAtLeast) {
+    score += cfg.completeness.highDelta;
     factors.push("High assessment completeness provides strong response context for AI analysis");
-  } else if (completeness < 50) {
-    score -= 15;
+  } else if (completeness < cfg.completeness.lowBelow) {
+    score += cfg.completeness.lowDelta;
     factors.push(`Low completeness (${completeness}%) limits the quality of AI analysis`);
   }
 
-  score = Math.max(10, Math.min(90, score));
-  const label = score >= 75 ? "High" : score >= 50 ? "Medium" : "Low";
-  const basis =
-    "Similarity advisory confidence reflects the quality and completeness of available context, historical assessment similarity, and response coverage available to the advisory layer. It does not represent the reliability of the platform recommendation itself.";
+  score = Math.max(cfg.clamp.min, Math.min(cfg.clamp.max, score));
+  const label = score >= cfg.labels.highAtLeast ? "High" : score >= cfg.labels.mediumAtLeast ? "Medium" : "Low";
 
-  return { score, label, basis, factors };
+  return { score, label, basis: cfg.basis, factors };
 }

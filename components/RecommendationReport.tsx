@@ -231,11 +231,18 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
     setGenerating(true); setError(null);
     try {
       const res = await fetch(`${BASE_PATH}/api/assessment/${assessmentId}/recommend`, { method: "POST" });
-      if (!res.ok) throw new Error("Server error");
+      if (!res.ok) {
+        let message = "Failed to generate report. Ensure responses have been saved.";
+        try {
+          const data = await res.json();
+          if (data?.error) message = data.error;
+        } catch { /* ignore parse errors */ }
+        throw new Error(message);
+      }
       setRec(await res.json());
-    } catch {
+    } catch (e) {
       if (showError) {
-        setError("Failed to generate report. Ensure responses have been saved.");
+        setError(e instanceof Error ? e.message : "Failed to generate report. Ensure responses have been saved.");
       }
     }
     finally { setGenerating(false); }
