@@ -221,7 +221,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
   const [rec, setRec] = useState<FullRec | null>(null);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hydrationAttempted, setHydrationAttempted] = useState(false);
+  const [showExecutiveSummary, setShowExecutiveSummary] = useState(false);
   const [architectApproval, setArchitectApproval] = useState<"agree" | "disagree" | "">("");
   const [architectApprovalReason, setArchitectApprovalReason] = useState("");
   const [approvalSaving, setApprovalSaving] = useState(false);
@@ -253,17 +253,11 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
   };
 
   useEffect(() => {
-    if (!existingRecommendation || rec || generating || hydrationAttempted) return;
-
+    if (!existingRecommendation || rec || generating) return;
     if (isFullRecommendation(existingRecommendation)) {
       setRec(existingRecommendation);
-      return;
     }
-
-    // A prior recommendation exists in DB; hydrate full report view automatically.
-    setHydrationAttempted(true);
-    void loadReport(false);
-  }, [existingRecommendation, rec, generating, hydrationAttempted]);
+  }, [existingRecommendation, rec, generating]);
 
   useEffect(() => {
     if (!rec) return;
@@ -289,7 +283,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
   if (!rec) return (
     <div className={styles.promptScreen}>
       <button onClick={generate} disabled={generating} className={styles.generateBtn}>
-        {generating ? "Generating Report..." : "Generate Assessment Report"}
+        {generating ? "Generating Report..." : "Generate Full Report"}
       </button>
       <div className={styles.promptIcon}>📋</div>
       <h3>Generate Governance Assessment Report</h3>
@@ -309,6 +303,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
   const journeySignals = allSignals.filter((sig) => sig.stageName !== "Assessment Metadata");
   const deterministicSuitabilityScore = rec.deterministicSuitabilityScore ?? rec.confidenceScore;
   const sortedPlatformScores = [...platformScores].sort((a, b) => b.score - a.score);
+  const archStepResponses = stepsWithData?.find(s => s.stepKey === "ARCHITECTURE")?.questionsAndResponses.filter(q => q.response_text?.trim()) ?? [];
   const hasOtherFactors = !!rec.aiStrategicAssessment;
   const dominantHistorical = (() => {
     if (!historicalPrecedentMatches || historicalPrecedentMatches.length === 0) {
@@ -363,8 +358,71 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
           <h2>Enterprise Architecture Assessment Report</h2>
           <span className={styles.reportSubtitle}>{assessmentMeta?.name} — BC Government EAAF Platform Evaluation</span>
         </div>
-        <button onClick={generate} disabled={generating} className={styles.regenerateBtn}>{generating ? "Regenerating..." : "Regenerate"}</button>
+        <div style={{ display: "flex", gap: ".5rem", alignItems: "center", flexWrap: "wrap" }}>
+          <button onClick={generate} disabled={generating} className={styles.regenerateBtn}>{generating ? "Generating..." : "(Re)generate Full Report"}</button>
+          <button onClick={() => setShowExecutiveSummary(v => !v)} className={styles.execSummaryBtn}>{showExecutiveSummary ? "Hide Executive Summary" : "Show Executive Summary"}</button>
+          <button onClick={() => window.print()} className={styles.printBtn}>Print Full Report</button>
+        </div>
       </div>
+
+      {showExecutiveSummary && (
+        <div className={styles.execPanel}>
+          <h3 className={styles.execPanelTitle}>Executive Summary</h3>
+          <div className={styles.execGrid}>
+            <div className={styles.execSection}>
+              <div className={styles.execLabel}>Business Problem</div>
+              <div className={styles.execValue}>{assessmentMeta?.businessContext || assessmentMeta?.businessGoals || "Not specified"}</div>
+            </div>
+            <div className={styles.execSection}>
+              <div className={styles.execLabel}>Drivers</div>
+              <div className={styles.execValue}>{assessmentMeta?.businessDrivers || "Not specified"}</div>
+            </div>
+            <div className={styles.execSection}>
+              <div className={styles.execLabel}>Requirements</div>
+              <div className={styles.execValue}>{assessmentMeta?.businessRequirement || "Not specified"}</div>
+            </div>
+            <div className={styles.execSection}>
+              <div className={styles.execLabel}>Current State</div>
+              <div className={styles.execValue}>
+                {archStepResponses.length === 0 ? (
+                  <span>Not captured in assessment.</span>
+                ) : (
+                  <ul className={styles.execList}>
+                    {archStepResponses.slice(0, 5).map((q, i) => (
+                      <li key={i}><strong>{q.question_text}:</strong> {q.response_text}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+            <div className={styles.execSection}>
+              <div className={styles.execLabel}>Proposed Solution</div>
+              <div className={styles.execValue}>
+                <strong>{rec.displayName}</strong>{rec.rationale ? ` — ${rec.rationale}` : ""}
+              </div>
+            </div>
+            <div className={styles.execSection}>
+              <div className={styles.execLabel}>Assessment Findings</div>
+              <div className={styles.execValue}>
+                <div>Recommended: <strong>{rec.displayName}</strong> — {institutionalConfidence?.label ?? "Low"} institutional confidence at <strong>{institutionalConfidence?.score ?? rec.confidenceScore}%</strong></div>
+                <div style={{ marginTop: ".35rem" }}>{confidenceBreakdown?.rulesMatched ?? 0} scoring signals from {confidenceBreakdown?.totalAnswered ?? 0}/{confidenceBreakdown?.totalQuestions ?? 0} questions answered</div>
+                {(institutionalConfidence?.factors?.length ?? 0) > 0 && (
+                  <ul className={styles.execList} style={{ marginTop: ".4rem" }}>
+                    {institutionalConfidence!.factors.slice(0, 3).map((f, i) => <li key={i}>{f}</li>)}
+                  </ul>
+                )}
+                <div className={styles.execPlatformRanking}>
+                  {sortedPlatformScores.slice(0, 4).map(({ platform: p, score }) => (
+                    <span key={p} className={`${styles.execPlatformChip} ${p === rec.platform ? styles.execPlatformWinner : ""}`}>
+                      {PLATFORM_DISPLAY[p]}: {score}/100
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className={styles.finalRecommendationHero}>
         <h3 className={styles.finalRecommendationTitle}>FINAL RECOMMENDATION: {rec.displayName}</h3>
