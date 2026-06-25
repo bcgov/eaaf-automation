@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import styles from "./RecommendationReport.module.css";
 import JurisdictionScan from "./JurisdictionScan";
+import InnovativeSolutions from "./InnovativeSolutions";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -111,6 +112,7 @@ interface StoredRecommendationSummary {
   risks: string;
   alternatives: string;
   created_at: string;
+  responsesChangedSince: boolean;
   architect_approval?: "agree" | "disagree" | null;
   architect_approval_reason?: string | null;
   architect_approval_recorded_at?: string | null;
@@ -254,10 +256,15 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
   };
 
   useEffect(() => {
-    if (!existingRecommendation || rec || generating) return;
+    if (rec || generating) return;
+    if (!existingRecommendation) return;
     if (isFullRecommendation(existingRecommendation)) {
       setRec(existingRecommendation);
+    } else if (!existingRecommendation.responsesChangedSince) {
+      // Nothing changed since last report — auto-generate silently
+      loadReport(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingRecommendation, rec, generating]);
 
   useEffect(() => {
@@ -938,8 +945,19 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
         <JurisdictionScan assessmentId={assessmentId} />
       </Section>
 
-      {/* 9 — FINAL RECOMMENDATION */}
-      <Section title="9 — Final Recommendation" badge="Architect Review" defaultOpen={true}>
+      {/* 9 — AI-ASSISTED INNOVATIVE SOLUTIONS */}
+      <Section title="9 — AI-Assisted Innovative Solutions" badge="AI-Assisted" defaultOpen={false}>
+        <p className={styles.sectionExplanation}>
+          Exploratory AI-generated alternatives and architectural variations related to the proposed solution.
+          These ideas are intended to broaden architectural thinking and are not recommendations.
+          They do not influence the deterministic platform decision.
+          Requires <code>JURISDICTION_AI_KEY</code> and <code>JURISDICTION_AI_ENDPOINT</code> in <code>.env.local</code>.
+        </p>
+        <InnovativeSolutions assessmentId={assessmentId} />
+      </Section>
+
+      {/* 10 — FINAL RECOMMENDATION */}
+      <Section title="10 — Final Recommendation" badge="Architect Review" defaultOpen={true}>
         <p className={styles.sectionExplanation}>
           Confirm whether you agree with the platform choice above. This approval is recorded for governance review only and does not change the current recommendation or any future scoring logic.
         </p>

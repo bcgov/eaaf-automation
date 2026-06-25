@@ -279,11 +279,25 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       FROM recommendations WHERE assessment_id = ?
     `
     )
-    .get(assessmentId);
+    .get(assessmentId) as (Record<string, unknown> & { created_at: string }) | undefined;
 
   if (!recommendation) {
     return NextResponse.json({ error: "No recommendation found" }, { status: 404 });
   }
 
-  return NextResponse.json(recommendation);
+  // Determine whether any scored responses have changed since this recommendation was generated.
+  // Only compare responses.updated_at — assessments.updated_at changes on every step navigation
+  // and would produce false positives.
+  const latestResponseUpdate = db
+    .prepare(
+      `SELECT MAX(updated_at) as latest FROM responses WHERE assessment_id = ?`
+    )
+    .get(assessmentId) as { latest: string | null };
+
+  const recTime = new Date(recommendation.created_at).getTime();
+  const responseTime = latestResponseUpdate.latest ? new Date(latestResponseUpdate.latest).getTime() : 0;
+  const responsesChangedSince = responseTime > recTime;
+
+  return NextResponse.json({ ...recommendation, responsesChangedSince });
 }
+
