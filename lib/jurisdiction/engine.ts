@@ -37,15 +37,12 @@ export interface JurisdictionEntry {
   jurisdiction: string;
   organization: string;
   sector: "public" | "private";
-  solution: string;
   platform: string | null;
   alignmentScore: number;
+  businessProblem: string;
+  solution: string;
+  outcome: string;
   alignmentRationale: string;
-  businessProblemAlignment: string;
-  driverAlignment: string;
-  requirementAlignment: string;
-  currentStateComparison: string;
-  proposedSolutionComparison: string;
   referenceUrl: string | null;
 }
 
@@ -75,7 +72,7 @@ function buildUserPrompt(inputs: JurisdictionScanInputs, regions: JurisdictionRe
   const regionDescriptions = regions.map((r) => REGION_LABELS[r]).join(", ");
   const jsonKeys = regions.map((r) => `  "${r}": []`).join(",\n");
   const schemaExamples = regions
-    .map((r) => `Each array entry in "${r}" must use this exact schema:\n{\n  "jurisdiction": "${REGION_JURISDICTION_HINT[r]}",\n  "organization": "Actual organization name",\n  "sector": "public",\n  "solution": "What they implemented and how it addressed their problem",\n  "platform": "Technology or platform used (e.g. Salesforce, ServiceNow, Custom)",\n  "alignmentScore": 82,\n  "alignmentRationale": "Why this case is relevant to BC Gov's situation",\n  "businessProblemAlignment": "How their business problem matched BC Gov's",\n  "driverAlignment": "Which of BC Gov's drivers this case reflects",\n  "requirementAlignment": "Which of BC Gov's requirements this case satisfies",\n  "currentStateComparison": "How their starting point compared to BC Gov's current state",\n  "proposedSolutionComparison": "How their implemented solution compares to BC Gov's proposed solution",\n  "referenceUrl": "A real URL you know of, or null"\n}`)
+    .map((r) => `Each array entry in "${r}" must follow this exact schema:\n{\n  "jurisdiction": "${REGION_JURISDICTION_HINT[r]}",\n  "organization": "Actual organization name",\n  "sector": "public",\n  "platform": "Technology platform used (e.g. ServiceNow, Salesforce, Custom)",\n  "alignmentScore": 82,\n  "businessProblem": "The specific business problem this organization was solving \u2014 2 to 3 sentences",\n  "solution": "What they implemented, key capabilities and scope \u2014 2 to 3 sentences",\n  "outcome": "Results achieved: efficiency gains, user adoption, SLA improvements \u2014 1 to 2 sentences",\n  "alignmentRationale": "Why this case is most relevant to BC Gov's situation \u2014 1 sentence",\n  "referenceUrl": "A specific, verifiable URL such as a government press release, procurement notice, ministry IT announcement, or credible news article about this implementation. Examples: a gov.on.ca announcement page, a GovTech article, a government annual report page. Use null ONLY if you have no specific URL \u2014 do not invent a URL."\n}`)
     .join("\n\n");
 
   const fieldLines = [
@@ -108,7 +105,8 @@ RULES:
 4. alignmentScore must be an integer 1–100. Only include entries with score >= 50.
 5. Only include organizations and cases you have reasonable factual knowledge of. Do not fabricate.
 6. Focus on implementations from the last 10 years where possible.
-7. CRITICAL: Keep ALL text field values under 120 characters each. Be concise.`;
+7. businessProblem, solution, and outcome should each be 1–3 informative sentences. Do not truncate mid-sentence.
+8. referenceUrl must be a real, verifiable government or news URL — not a homepage. Use null if unsure.`;
 }
 
 // ── Parsing & normalization ───────────────────────────────────────────────
@@ -121,15 +119,12 @@ function normalizeEntries(raw: unknown): JurisdictionEntry[] {
       jurisdiction: String(e.jurisdiction ?? ""),
       organization: String(e.organization ?? ""),
       sector: (e.sector === "private" ? "private" : "public") as "public" | "private",
-      solution: String(e.solution ?? ""),
       platform: e.platform ? String(e.platform) : null,
       alignmentScore: Math.min(100, Math.max(0, Number(e.alignmentScore) || 0)),
+      businessProblem: String(e.businessProblem ?? ""),
+      solution: String(e.solution ?? ""),
+      outcome: String(e.outcome ?? ""),
       alignmentRationale: String(e.alignmentRationale ?? ""),
-      businessProblemAlignment: String(e.businessProblemAlignment ?? ""),
-      driverAlignment: String(e.driverAlignment ?? ""),
-      requirementAlignment: String(e.requirementAlignment ?? ""),
-      currentStateComparison: String(e.currentStateComparison ?? ""),
-      proposedSolutionComparison: String(e.proposedSolutionComparison ?? ""),
       referenceUrl: e.referenceUrl ? String(e.referenceUrl) : null,
     }))
     .sort((a, b) => b.alignmentScore - a.alignmentScore)

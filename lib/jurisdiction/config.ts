@@ -8,8 +8,8 @@
  *   JURISDICTION_AI_ENDPOINT    = base URL for the provider (see examples below)
  *   JURISDICTION_AI_KEY         = API key / secret
  *   JURISDICTION_AI_MODEL       = model name
- *   JURISDICTION_AI_MAX_TOKENS  = (optional) default 2000
- *   JURISDICTION_AI_TEMPERATURE = (optional) default 0.2
+ *   JURISDICTION_AI_MAX_TOKENS  = (optional) default 4000
+ *   JURISDICTION_AI_TEMPERATURE = (optional) default 0.1 — controls hallucination (0.0 = most factual, 1.0 = most creative)
  *   JURISDICTION_REGIONS        = (optional) comma-separated list: canada,us,europe,other — default: canada
  *
  * Provider endpoint examples:
@@ -53,7 +53,7 @@ export function getJurisdictionAIConfig(): AIProviderConfig {
     ),
 
     temperature: parseFloat(
-      process.env.JURISDICTION_AI_TEMPERATURE ?? "0.2"
+      process.env.JURISDICTION_AI_TEMPERATURE ?? "0.1"
     ),
 
     regions: (() => {

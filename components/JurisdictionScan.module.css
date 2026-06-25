@@ -300,6 +300,11 @@
 .detailValue {
   color: #444;
   flex: 1;
+  line-height: 1.55;
+}
+.rationaleText {
+  color: #334;
+  font-style: italic;
 }
 .refLink {
   color: #0055bb;
@@ -307,6 +312,7 @@
   word-break: break-all;
 }
 .refLink:hover { text-decoration: underline; }
+
 
 /* ─── Score badge ─────────────────────────────────────────────────────────── */
 .scoreBadge {

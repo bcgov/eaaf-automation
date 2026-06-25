@@ -11,16 +11,12 @@ interface JurisdictionEntry {
   jurisdiction: string;
   organization: string;
   sector: "public" | "private";
-  solution: string;
   platform: string | null;
   alignmentScore: number;
+  businessProblem: string;
+  solution: string;
+  outcome: string;
   alignmentRationale: string;
-  businessProblemAlignment: string;
-  driverAlignment: string;
-  requirementAlignment: string;
-  currentStateComparison: string;
-  proposedSolutionComparison: string;
-  referenceUrl: string | null;
 }
 
 interface JurisdictionScanResult {
@@ -82,10 +78,16 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+// ── Search URL builder ───────────────────────────────────────────────────
+
+function buildSearchUrl(entry: JurisdictionEntry): string {
+  const terms = [entry.organization, entry.jurisdiction, entry.platform, "implementation"].filter(Boolean).join(" ");
+  return `https://www.google.com/search?q=${encodeURIComponent(terms)}`;
+}
+
 // ── Entry card ────────────────────────────────────────────────────────────
 
 function EntryCard({ entry, rank }: { entry: JurisdictionEntry; rank: number }) {
-  const [expanded, setExpanded] = useState(false);
   return (
     <div className={styles.entryCard}>
       <div className={styles.entryHeader}>
@@ -105,37 +107,44 @@ function EntryCard({ entry, rank }: { entry: JurisdictionEntry; rank: number }) 
         <ScoreBadge score={entry.alignmentScore} />
       </div>
 
-      <p className={styles.entrySolution}>{entry.solution}</p>
-      <p className={styles.entryRationale}>{entry.alignmentRationale}</p>
-
-      <button
-        type="button"
-        className={styles.expandBtn}
-        onClick={() => setExpanded((v) => !v)}
-      >
-        {expanded ? "▲ Hide detail" : "▼ Show alignment detail"}
-      </button>
-
-      {expanded && (
+      {entry.businessProblem && (
         <div className={styles.detailBlock}>
-          <DetailRow label="Business Problem" value={entry.businessProblemAlignment} />
-          <DetailRow label="Drivers" value={entry.driverAlignment} />
-          <DetailRow label="Requirements" value={entry.requirementAlignment} />
-          <DetailRow label="Current State" value={entry.currentStateComparison} />
-          <DetailRow label="Solution Comparison" value={entry.proposedSolutionComparison} />
-          {entry.referenceUrl && (
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Business Problem</span>
+            <span className={styles.detailValue}>{entry.businessProblem}</span>
+          </div>
+          {entry.solution && (
             <div className={styles.detailRow}>
-              <span className={styles.detailLabel}>Reference</span>
+              <span className={styles.detailLabel}>What They Did</span>
+              <span className={styles.detailValue}>{entry.solution}</span>
+            </div>
+          )}
+          {entry.outcome && (
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>Outcome</span>
+              <span className={styles.detailValue}>{entry.outcome}</span>
+            </div>
+          )}
+          {entry.alignmentRationale && (
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>Why Relevant</span>
+              <span className={`${styles.detailValue} ${styles.rationaleText}`}>{entry.alignmentRationale}</span>
+            </div>
+          )}
+          <div className={styles.detailRow}>
+            <span className={styles.detailLabel}>Find References</span>
+            <span className={styles.detailValue}>
               <a
-                href={entry.referenceUrl}
+                href={buildSearchUrl(entry)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={styles.refLink}
               >
-                {entry.referenceUrl}
+                🔍 Search Google for &ldquo;{entry.organization} {entry.jurisdiction} {entry.platform} implementation&rdquo;
               </a>
-            </div>
-          )}
+
+            </span>
+          </div>
         </div>
       )}
     </div>
