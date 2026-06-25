@@ -23,13 +23,18 @@ interface InnovativeSolutionsResult {
   aiModel: string;
 }
 
+export interface InnovativeSolutionsSummary {
+  topIdeas: Array<{ ideaName: string; description: string; whyRelevant: string }>;
+}
+
 interface Props {
   assessmentId: number;
+  onResult?: (summary: InnovativeSolutionsSummary) => void;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────
 
-export default function InnovativeSolutions({ assessmentId }: Props) {
+export default function InnovativeSolutions({ assessmentId, onResult }: Props) {
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [result, setResult] = useState<InnovativeSolutionsResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -49,6 +54,15 @@ export default function InnovativeSolutions({ assessmentId }: Props) {
       const data: InnovativeSolutionsResult = await res.json();
       setResult(data);
       setStatus("done");
+      if (onResult) {
+        onResult({
+          topIdeas: data.ideas.slice(0, 2).map(i => ({
+            ideaName: i.ideaName,
+            description: i.description,
+            whyRelevant: i.whyRelevant,
+          })),
+        });
+      }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Request failed");
       setStatus("error");

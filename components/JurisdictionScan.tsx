@@ -39,8 +39,24 @@ interface JurisdictionScanResult {
   };
 }
 
+export interface JurisdictionScanEntry {
+  organization: string;
+  jurisdiction: string;
+  platform: string | null;
+  outcome: string;
+  alignmentScore: number;
+  alignmentRationale: string;
+}
+
+export interface JurisdictionScanSummary {
+  totalCount: number;
+  regions: string[];
+  topEntries: JurisdictionScanEntry[];
+}
+
 interface Props {
   assessmentId: number;
+  onResult?: (summary: JurisdictionScanSummary) => void;
 }
 
 // ── Region metadata ───────────────────────────────────────────────────────
@@ -192,7 +208,7 @@ function RegionSection({
 
 // ── Main component ────────────────────────────────────────────────────────
 
-export default function JurisdictionScan({ assessmentId }: Props) {
+export default function JurisdictionScan({ assessmentId, onResult }: Props) {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<JurisdictionScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -209,7 +225,25 @@ export default function JurisdictionScan({ assessmentId }: Props) {
       if (!res.ok) {
         throw new Error(data.error ?? "Scan failed");
       }
-      setResult(data as JurisdictionScanResult);
+      const scanResult = data as JurisdictionScanResult;
+      setResult(scanResult);
+      if (onResult) {
+        const regions = scanResult.configuredRegions ?? ["canada"];
+        const allEntries = regions.flatMap(r => scanResult[r as RegionKey] ?? []);
+        const sorted = allEntries.sort((a, b) => b.alignmentScore - a.alignmentScore);
+        onResult({
+          totalCount: allEntries.length,
+          regions,
+          topEntries: sorted.slice(0, 2).map(e => ({
+            organization: e.organization,
+            jurisdiction: e.jurisdiction,
+            platform: e.platform,
+            outcome: e.outcome,
+            alignmentScore: e.alignmentScore,
+            alignmentRationale: e.alignmentRationale,
+          })),
+        });
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Jurisdiction scan failed");
     } finally {

@@ -158,7 +158,7 @@ export interface EaafRules {
   };
 }
 
-export const EAAF_RULES: EaafRules = rawRules as EaafRules;
+export const EAAF_RULES: EaafRules = rawRules as unknown as EaafRules;
 
 export function formatRuleTemplate(template: string, vars: Record<string, string | number | null | undefined>): string {
   return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_m, key) => {
