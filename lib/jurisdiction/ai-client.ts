@@ -73,6 +73,9 @@ async function callOpenAICompatible(
     response_format: { type: "json_object" },
   };
 
+  console.log(`[AI-Client] POST ${url}`);
+  console.log("[AI-Client] Request body:", JSON.stringify({ ...body, messages: body.messages.map((m) => ({ ...m, content: m.content.slice(0, 100) + "..." })) }));
+
   const res = await fetch(url, {
     method: "POST",
     headers,
@@ -81,6 +84,7 @@ async function callOpenAICompatible(
 
   if (!res.ok) {
     const err = await res.text();
+    console.error(`[AI-Client] Error response (${res.status}):`, err);
     throw new Error(`AI call failed (${config.provider} ${res.status}): ${err}`);
   }
 
@@ -95,8 +99,8 @@ async function callGemini(
   config: AIProviderConfig,
   request: AICallRequest
 ): Promise<AICallResponse> {
-  // Gemini endpoint format: {base}/{model}:generateContent?key={apiKey}
-  const url = `${config.endpoint.replace(/\/$/, "")}/${config.model}:generateContent?key=${config.apiKey}`;
+  // Gemini endpoint format: {base}/models/{model}:generateContent?key={apiKey}
+  const url = `${config.endpoint.replace(/\/$/, "")}/models/${config.model}:generateContent?key=${config.apiKey}`;
 
   const body = {
     contents: [
@@ -112,18 +116,25 @@ async function callGemini(
     },
   };
 
+  console.log(`[AI-Client/Gemini] POST ${url.replace(/key=[^&]+/, "key=REDACTED")}`);
+  console.log("[AI-Client/Gemini] generationConfig:", body.generationConfig);
+
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 
+  console.log(`[AI-Client/Gemini] Response status: ${res.status}`);
+
   if (!res.ok) {
     const err = await res.text();
+    console.error("[AI-Client/Gemini] Error body:", err);
     throw new Error(`Gemini call failed (${res.status}): ${err}`);
   }
 
   const data = await res.json();
+  console.log("[AI-Client/Gemini] Response candidates:", JSON.stringify(data).slice(0, 300));
   const content: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
   return { content, provider: "gemini", model: config.model };
 }
