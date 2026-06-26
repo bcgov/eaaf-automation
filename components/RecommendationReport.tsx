@@ -198,11 +198,10 @@ function SubSection({ title, badge, defaultOpen = false, children }: { title: st
   );
 }
 
-function Section({ title, badge, defaultOpen = false, children }: { title: string; badge?: string; defaultOpen?: boolean; children: React.ReactNode }) {
-  const [open, setOpen] = useState(defaultOpen);
+function Section({ title, badge, num, open, onToggle, children }: { title: string; badge?: string; num?: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
   return (
-    <div className={`${styles.section} ${open ? styles.sectionOpen : ""}`}>
-      <button type="button" className={styles.sectionHeader} onClick={() => setOpen(o => !o)} aria-expanded={open}>
+    <div id={num ? `section-${num}` : undefined} className={`${styles.section} ${open ? styles.sectionOpen : ""}`}>
+      <button type="button" className={styles.sectionHeader} onClick={onToggle} aria-expanded={open}>
         <span className={styles.sectionTitle}>{title}</span>
         {badge && <span className={styles.sectionBadge}>{badge}</span>}
         <span className={styles.sectionChevron}>{open ? "▲" : "▼"}</span>
@@ -231,6 +230,15 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
   const [architectApprovalReason, setArchitectApprovalReason] = useState("");
   const [approvalSaving, setApprovalSaving] = useState(false);
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set(["1"]));
+  const toggleSection = (num: string) => {
+    setOpenSections(prev => {
+      const next = new Set(prev);
+      if (next.has(num)) next.delete(num);
+      else next.add(num);
+      return next;
+    });
+  };
 
   const loadReport = async (showError: boolean) => {
     setGenerating(true); setError(null);
@@ -328,6 +336,25 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
     return top ? `${top[0]} (${top[1]} case${top[1] === 1 ? "" : "s"})` : "no historical platform trend";
   })();
 
+  const sidebarNavItems = [
+    { num: "1", label: "Assessment Overview", badge: null as string | null },
+    { num: "2", label: "Assessment Journey", badge: `${confidenceBreakdown?.totalAnswered ?? 0}/${confidenceBreakdown?.totalQuestions ?? 0}` as string | null },
+    { num: "3", label: "Signals & Evidence", badge: allSignals.length > 0 ? String(allSignals.length) : null as string | null },
+    { num: "4", label: "Platform Evaluation", badge: "All" as string | null },
+    { num: "5", label: "Rules Based Decision", badge: "Primary" as string | null },
+    { num: "6", label: "Historical Similarity", badge: "Context" as string | null },
+    { num: "7", label: "Decision Confidence", badge: (institutionalConfidence?.label ?? null) as string | null },
+    { num: "8", label: "Jurisdiction Scan", badge: "AI" as string | null },
+    { num: "9", label: "Innovative Solutions", badge: "AI" as string | null },
+    { num: "10", label: "Architect Review", badge: null as string | null },
+  ];
+  const supportStatementParts: string[] = [
+    "deterministic institutional logic",
+    ...(historicalPrecedentMatches?.length > 0 ? ["historical precedent"] : []),
+    ...(allSignals.length > 0 ? ["strong signal alignment throughout the assessment"] : []),
+  ];
+  const supportStatement = `This recommendation is supported by ${supportStatementParts.join(", ")}.`;
+
   const submitArchitectApproval = async () => {
     if (!architectApproval) {
       setApprovalStatus("Select agree or disagree before saving.");
@@ -363,20 +390,50 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
 
   return (
     <div className={styles.report}>
-      <div className={styles.reportHeader}>
-        <div>
-          <h2>Enterprise Architecture Assessment Report</h2>
-          <span className={styles.reportSubtitle}>{assessmentMeta?.name} — BC Government EAAF Platform Evaluation</span>
+      {/* Toolbar */}
+      <div className={styles.reportToolbar}>
+        <div className={styles.toolbarLeft}>
+          <span className={styles.toolbarTitle}>Enterprise Architecture Assessment Report</span>
+          <span className={styles.toolbarSubtitle}>{assessmentMeta?.name} — BC Government EAAF Platform Evaluation</span>
         </div>
-        <div style={{ display: "flex", gap: ".5rem", alignItems: "center", flexWrap: "wrap" }}>
-          <button onClick={generate} disabled={generating} className={styles.regenerateBtn}>{generating ? "Generating..." : "(Re)generate Full Report"}</button>
-          <button onClick={() => setShowExecutiveSummary(v => !v)} className={styles.execSummaryBtn}>{showExecutiveSummary ? "Hide Executive Summary" : "Show Executive Summary"}</button>
-          <button onClick={() => window.print()} className={styles.printBtn}>Print Full Report</button>
+        <div className={styles.toolbarActions}>
+          <button onClick={generate} disabled={generating} className={styles.toolbarBtn}>{generating ? "Regenerating..." : "Regenerate Full Report"}</button>
+          <button onClick={() => window.print()} className={styles.toolbarBtn}>↓ Download PDF</button>
+          <button onClick={() => setShowExecutiveSummary(v => !v)} className={`${styles.toolbarBtnPrimary} ${showExecutiveSummary ? styles.toolbarBtnActive : ""}`}>Executive Summary</button>
         </div>
       </div>
 
-      {showExecutiveSummary && (
-        <div className={styles.execPanel}>
+      <div className={styles.reportLayout}>
+        {/* Sidebar */}
+        <aside className={styles.reportSidebar}>
+          <div className={styles.sidebarBrand}>
+            <div className={styles.sidebarBrandTitle}>Enterprise Architecture Assessment Report</div>
+            <div className={styles.sidebarBrandSub}>{assessmentMeta?.name ?? "Platform Evaluation"}</div>
+          </div>
+          <nav className={styles.sidebarNav}>
+            {sidebarNavItems.map(item => (
+              <button
+                key={item.num}
+                type="button"
+                className={`${styles.sidebarNavItem} ${openSections.has(item.num) ? styles.sidebarNavActive : ""}`}
+                onClick={() => {
+                  toggleSection(item.num);
+                  const el = document.getElementById(`section-${item.num}`);
+                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+              >
+                <span className={styles.sidebarNavNum}>{item.num}</span>
+                <span className={styles.sidebarNavLabel}>{item.label}</span>
+                {item.badge && <span className={styles.sidebarNavBadge}>{item.badge}</span>}
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        {/* Main content */}
+        <main className={styles.reportMain}>
+          {showExecutiveSummary && (
+            <div className={styles.execPanel}>
           <div className={styles.execPanelHeader}>
             <h3 className={styles.execPanelTitle}>Executive Summary</h3>
             <span className={styles.execPanelAudience}>For senior executives, decision makers, and governance bodies</span>
@@ -417,7 +474,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
                   <span className={styles.execConfHistorical}>
                     {" "}{historicalPrecedentMatches.length} similar past assessment{historicalPrecedentMatches.length !== 1 ? "s" : ""} found within the organization
                     {historicalPrecedentMatches[0] ? (
-                      <> — closest match: <strong>{historicalPrecedentMatches[0].name}</strong> ({Math.round(historicalPrecedentMatches[0].similarityScore * 100)}% similar, used <strong>{historicalPrecedentMatches[0].platform}</strong>)</>
+                      <> — closest match: <strong>{historicalPrecedentMatches[0].name}</strong> ({Math.round(historicalPrecedentMatches[0].similarityScore)}% similar, used <strong>{historicalPrecedentMatches[0].platform}</strong>)</>
                     ) : null}.
                   </span>
                 ) : (
@@ -476,29 +533,51 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
             </div>
 
           </div>
-        </div>
-      )}
+          </div>
+          )}
 
-      <div className={styles.finalRecommendationHero}>
-        <h3 className={styles.finalRecommendationTitle}>FINAL RECOMMENDATION: {rec.displayName}</h3>
-        <div className={styles.finalRecommendationSummary}>
-          <div className={styles.finalRecommendationSummaryItem}>
-            <strong>Institutional Knowledge Confidence:</strong> {institutionalConfidence?.label ?? "Low"} at {institutionalConfidence?.score ?? rec.confidenceScore}%
+          {/* Hero card */}
+          <div className={styles.heroCard}>
+            <div className={styles.heroTop}>
+              <div className={styles.heroCheckCircle}>✓</div>
+              <div className={styles.heroTextArea}>
+                <div className={styles.heroLabel}>Final Recommendation</div>
+                <div className={styles.heroName}>{rec.displayName}</div>
+              </div>
+            </div>
+            <div className={styles.heroMetrics}>
+              <div className={styles.heroMetric}>
+                <span className={styles.heroMetricIcon}>🛡</span>
+                <span className={styles.heroMetricLabel}>Confidence Level</span>
+                <span className={styles.heroMetricValue}>{institutionalConfidence?.label ?? "Low"} at {institutionalConfidence?.score ?? rec.confidenceScore}%</span>
+              </div>
+              <div className={styles.heroMetric}>
+                <span className={styles.heroMetricIcon}>📋</span>
+                <span className={styles.heroMetricLabel}>Historical Evidence</span>
+                <span className={styles.heroMetricValue}>{historicalPrecedentMatches?.length ?? 0} similar case{(historicalPrecedentMatches?.length ?? 0) === 1 ? "" : "s"}</span>
+              </div>
+              <div className={styles.heroMetric}>
+                <span className={styles.heroMetricIcon}>⚡</span>
+                <span className={styles.heroMetricLabel}>Signals Detected</span>
+                <span className={styles.heroMetricValue}>{allSignals.length} signal{allSignals.length === 1 ? "" : "s"}</span>
+              </div>
+              <div className={styles.heroMetric}>
+                <span className={styles.heroMetricIcon}>◐</span>
+                <span className={styles.heroMetricLabel}>Response Completion</span>
+                <span className={styles.heroMetricValue}>{confidenceBreakdown?.totalAnswered ?? 0} of {confidenceBreakdown?.totalQuestions ?? 0}</span>
+              </div>
+            </div>
           </div>
-          <div className={styles.finalRecommendationSummaryItem}>
-            <strong>Historical Evidence:</strong> {historicalPrecedentMatches?.length ?? 0} similar case{(historicalPrecedentMatches?.length ?? 0) === 1 ? "" : "s"}, dominant historical platform used: {dominantHistorical}
-          </div>
-          <div className={styles.finalRecommendationSummaryItem}>
-            <strong>Assessment Signals:</strong> {confidenceBreakdown?.rulesMatched ?? 0} signals received in the assessment journey
-          </div>
-          <div className={styles.finalRecommendationSummaryItem}>
-            <strong>Response Completeness:</strong> {confidenceBreakdown?.totalAnswered ?? 0} out of {confidenceBreakdown?.totalQuestions ?? 0} questions were answered
-          </div>
-        </div>
-      </div>
 
+          {/* Support banner */}
+          <div className={styles.supportBanner}>
+            <span className={styles.supportIcon}>🏛</span>
+            <p className={styles.supportText}>{supportStatement}</p>
+          </div>
+
+          <div className={styles.sectionsContainer}>
       {/* 1 — ASSESSMENT OVERVIEW */}
-      <Section title="1 — Assessment Overview" badge="Scope and Context" defaultOpen={false}>
+      <Section title="1. ASSESSMENT OVERVIEW" num="1" badge="Scope & Context" open={openSections.has("1")} onToggle={() => toggleSection("1")}>
         <div className={styles.overviewBlock}>
           <p className={styles.overviewNarrative}>
             This Enterprise Architecture Assessment evaluated platform options for <strong>{assessmentMeta?.name}</strong>.{assessmentMeta?.businessContext ? ` ${assessmentMeta.businessContext}` : ""}
@@ -514,7 +593,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       </Section>
 
       {/* 2 — ASSESSMENT JOURNEY */}
-      <Section title="2 — Assessment Journey" badge={`${confidenceBreakdown?.totalAnswered ?? 0} of ${confidenceBreakdown?.totalQuestions ?? 0} questions answered`} defaultOpen={false}>
+      <Section title="2. ASSESSMENT JOURNEY" num="2" badge={`${confidenceBreakdown?.totalAnswered ?? 0} of ${confidenceBreakdown?.totalQuestions ?? 0} answered`} open={openSections.has("2")} onToggle={() => toggleSection("2")}>
         <p className={styles.logicIntro}>The following four evaluation stages were completed as part of this assessment. Each stage collected architect responses against defined factors and sub-factors. Findings indicate how each stage influenced the final recommendation.</p>
         {stepsWithData?.map(step => (
           <SubSection key={step.stepKey} title={step.stepName} badge={`${step.answeredCount} of ${step.totalQuestions} answered`} defaultOpen={false}>
@@ -549,7 +628,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       </Section>
 
       {/* 3 — ASSESSMENT SIGNALS AND SCORING EVIDENCE */}
-      <Section title="3 — Assessment Signals and Scoring Evidence" badge={`${allSignals.length} signal${allSignals.length === 1 ? "" : "s"}`} defaultOpen={false}>
+      <Section title="3. ASSESSMENT SIGNALS AND SCORING EVIDENCE" num="3" badge={`${allSignals.length} signal${allSignals.length === 1 ? "" : "s"}`} open={openSections.has("3")} onToggle={() => toggleSection("3")}>
         <p className={styles.logicIntro}>
           Full scoring evidence is shown below. Assessment Metadata signals are listed separately, followed by stage-based assessment signals. Each signal includes response evidence, interpretation, why it matters, and platform impact.
         </p>
@@ -620,7 +699,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       </Section>
 
       {/* 4 — PLATFORM COMPARISON */}
-      <Section title="4 — Platform Evaluation" badge="All platforms assessed" defaultOpen={false}>
+      <Section title="4. PLATFORM EVALUATION" num="4" badge="All platforms assessed" open={openSections.has("4")} onToggle={() => toggleSection("4")}>
         <p className={styles.logicIntro}>All four BC Government approved platforms were evaluated against assessment signals. Suitability scores are normalised to 0–100. Platforms that scored lower are included to demonstrate that all options were considered and why each was not selected.</p>
         <div className={styles.platformGrid}>
           {sortedPlatformScores.map(({ platform: p, score }) => {
@@ -765,7 +844,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       </Section>
 
       {/* 5 — RULES BASED DECISION ENGINE */}
-      <Section title="5 — Rules Based Decision Engine (Institutional Logic)" badge="Primary Decision Authority">
+      <Section title="5. RULES BASED DECISION ENGINE (INSTITUTIONAL LOGIC)" num="5" badge="Primary Decision Authority" open={openSections.has("5")} onToggle={() => toggleSection("5")}>
         <div className={styles.rulesBasis}>
           <p className={styles.rulesExplanation}>
             <strong>This section contains the deterministic platform decision made by the Rules Based Decision Engine. This decision is based entirely on predefined architecture rules, factor weights, and scoring logic defined by enterprise architects. This process contains no artificial intelligence, no historical precedent, and no subjective interpretation.</strong>
@@ -813,7 +892,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       </Section>
 
       {/* 6 — HISTORICAL SIMILARITY EVIDENCE */}
-      <Section title="6 — Historical Similarity Evidence" badge="Context Only" defaultOpen={false}>
+      <Section title="6. HISTORICAL SIMILARITY EVIDENCE" num="6" badge="Context Only" open={openSections.has("6")} onToggle={() => toggleSection("6")}>
         <div className={styles.historicalSimilaritySection}>
           <p className={styles.sectionExplanation}>
             Historical assessment data from prior architecture evaluations is shown here as context only. It does not alter the deterministic recommendation above.
@@ -899,7 +978,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       </Section>
 
       {/* 7 — DECISION CONFIDENCE CLASSIFICATION */}
-      <Section title="7 — Decision Confidence Classification" badge="Governance Interpretation" defaultOpen={false}>
+      <Section title="7. DECISION CONFIDENCE CLASSIFICATION" num="7" badge="Governance Interpretation" open={openSections.has("7")} onToggle={() => toggleSection("7")}>
         <div className={styles.confidenceClassification}>
           <p className={styles.ccIntro}>
             This classification synthesizes the strength of deterministic decision engine output with the depth of historical assessment precedent available. This classification is for governance interpretation and transparency only and does not affect the platform selection above.
@@ -982,7 +1061,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       </Section>
 
       {/* 8 — JURISDICTION SCAN */}
-      <Section title="8 — Jurisdiction Scan" badge="AI-Assisted" defaultOpen={false}>
+      <Section title="8. JURISDICTION SCAN" num="8" badge="AI-Assisted" open={openSections.has("8")} onToggle={() => toggleSection("8")}>
         <p className={styles.sectionExplanation}>
           Identifies real-world Canadian public sector implementations most closely aligned with this
           assessment&apos;s business problem, drivers, requirements, current state, and proposed solution.
@@ -993,7 +1072,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       </Section>
 
       {/* 9 — AI-ASSISTED INNOVATIVE SOLUTIONS */}
-      <Section title="9 — AI-Assisted Innovative Solutions" badge="AI-Assisted" defaultOpen={false}>
+      <Section title="9. AI-ASSISTED INNOVATIVE SOLUTIONS" num="9" badge="AI-Assisted" open={openSections.has("9")} onToggle={() => toggleSection("9")}>
         <p className={styles.sectionExplanation}>
           Exploratory AI-generated alternatives and architectural variations related to the proposed solution.
           These ideas are intended to broaden architectural thinking and are not recommendations.
@@ -1004,7 +1083,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       </Section>
 
       {/* 10 — FINAL RECOMMENDATION */}
-      <Section title="10 — Final Recommendation" badge="Architect Review" defaultOpen={true}>
+      <Section title="10. FINAL RECOMMENDATION" num="10" badge="Architect Review" open={openSections.has("10")} onToggle={() => toggleSection("10")}>
         <p className={styles.sectionExplanation}>
           Confirm whether you agree with the platform choice above. This approval is recorded for governance review only and does not change the current recommendation or any future scoring logic.
         </p>
@@ -1063,6 +1142,9 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
           )}
         </div>
       </Section>
+          </div>{/* sectionsContainer */}
+        </main>
+      </div>{/* reportLayout */}
     </div>
   );
 }
