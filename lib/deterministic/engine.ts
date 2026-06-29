@@ -14,6 +14,9 @@ export interface ScoringHit {
   responseSnippet: string;
   keywordMatched: string;
   platformPoints: Partial<Record<Platform, number>>;
+  concept?: string;
+  description?: string;
+  ruleWhyItMatters?: string;
 }
 
 export interface RecommendationResult {
@@ -35,6 +38,9 @@ export interface RecommendationResult {
 interface Signal {
   keywords: string[];
   scores: Partial<Record<Platform, number>>;
+  concept?: string;
+  description?: string;
+  whyItMatters?: string;
 }
 
 const SCORING_RULES = EAAF_RULES.platformRules.scoringRules as Record<string, Signal[]>;
@@ -86,6 +92,9 @@ function scoreResponse(
         responseSnippet: responseText.substring(0, 120) + (responseText.length > 120 ? "..." : ""),
         keywordMatched: matchedKw,
         platformPoints: positivePoints,
+        concept: rule.concept,
+        description: rule.description,
+        ruleWhyItMatters: rule.whyItMatters,
       });
     }
   }

@@ -14,6 +14,7 @@ import {
   buildSimilarityHistoricalAlignment,
 } from "@/lib/deterministic/confidence-similarity-report";
 import db from "@/lib/db/db";
+import { getAiCache, saveAiCache } from "@/lib/db/aiCache";
 
 const STEP_ORDER = [
   "ARCHITECTURE",
@@ -169,17 +170,29 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // ── Recommendation document assembly ─────────────────────────────────────
   let assembledDocument: { summary: string; platformAnalysis: string; nextSteps: string; disclaimer: string } | null = null;
   try {
-    assembledDocument = await assembleRecommendationDocument(
-      assessment.name,
-      assessment.business_context,
-      assessment.business_goals,
-      assessment.business_drivers,
-      assessment.business_requirement,
-      [],
-      result.platformScores,
-      result,
-      similarAssessments.map((s) => ({ name: s.name, similarity: s.similarityScore }))
-    );
+    // Re-use cached assembled document if responses haven't changed since it was generated
+    const latestResponseUpdate = db
+      .prepare(`SELECT MAX(updated_at) as latest FROM responses WHERE assessment_id = ?`)
+      .get(assessmentId) as { latest: string | null };
+    const cachedDoc = getAiCache<{ summary: string; platformAnalysis: string; nextSteps: string; disclaimer: string }>(assessmentId, "assembled_document");
+    const responseTime = latestResponseUpdate.latest ? new Date(latestResponseUpdate.latest).getTime() : 0;
+    const cacheTime = cachedDoc ? new Date(cachedDoc.created_at).getTime() : 0;
+    if (cachedDoc && cacheTime >= responseTime) {
+      assembledDocument = cachedDoc.data;
+    } else {
+      assembledDocument = await assembleRecommendationDocument(
+        assessment.name,
+        assessment.business_context,
+        assessment.business_goals,
+        assessment.business_drivers,
+        assessment.business_requirement,
+        [],
+        result.platformScores,
+        result,
+        similarAssessments.map((s) => ({ name: s.name, similarity: s.similarityScore }))
+      );
+      saveAiCache(assessmentId, "assembled_document", assembledDocument);
+    }
   } catch (e) {
     console.warn("Recommendation document assembly failed:", e);
     assembledDocument = {
@@ -189,6 +202,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       disclaimer: "This assessment provides a governance-ready platform recommendation based on deterministic scoring rules, historical assessment comparison, and BC Government platform standards. All recommendations should be validated by the architecture team before procurement.",
     };
   }
+
+  // ── Read cached AI scan results to return alongside report ────────────────
+  const cachedJurisdictionScan = getAiCache(assessmentId, "jurisdiction_scan")?.data ?? null;
+  const cachedInnovativeSolutions = getAiCache(assessmentId, "innovative_solutions")?.data ?? null;
 
   return NextResponse.json({
     // Core recommendation
@@ -260,6 +277,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     enrichedSignals,
     // Recommendation document
     assembledDocument,
+    // Cached AI scans
+    cachedJurisdictionScan,
+    cachedInnovativeSolutions,
   });
   } catch (e) {
     console.error(`[recommend] Unhandled error for assessment ${assessmentId}:`, e);
@@ -298,6 +318,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const responseTime = latestResponseUpdate.latest ? new Date(latestResponseUpdate.latest).getTime() : 0;
   const responsesChangedSince = responseTime > recTime;
 
-  return NextResponse.json({ ...recommendation, responsesChangedSince });
+  return NextResponse.json({
+    ...recommendation,
+    responsesChangedSince,
+    cachedJurisdictionScan: getAiCache(assessmentId, "jurisdiction_scan")?.data ?? null,
+    cachedInnovativeSolutions: getAiCache(assessmentId, "innovative_solutions")?.data ?? null,
+    assembledDocument: getAiCache(assessmentId, "assembled_document")?.data ?? null,
+  });
 }
 

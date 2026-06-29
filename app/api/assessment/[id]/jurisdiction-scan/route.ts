@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import db from "@/lib/db/db";
 import { runJurisdictionScan } from "@/lib/jurisdiction/engine";
 import { isJurisdictionScanConfigured } from "@/lib/jurisdiction/config";
+import { saveAiCache } from "@/lib/db/aiCache";
 
 export async function POST(
   req: Request,
@@ -53,6 +54,7 @@ export async function POST(
 
   try {
     const result = await runJurisdictionScan(inputs);
+    saveAiCache(assessmentId, "jurisdiction_scan", result);
     return NextResponse.json(result);
   } catch (error) {
     console.error("[JurisdictionScan Route] Error:", error);

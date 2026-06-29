@@ -1,460 +1,166 @@
 # EAAF Automation
 
-Next.js + TypeScript application for enterprise architecture assessment and deterministic platform recommendation engine.
+Enterprise Architecture Assessment Framework (EAAF) — automated platform recommendation tool for BC Government enterprise architects.
 
 ---
 
-## Prerequisites (Install First)
+## What This Application Does
 
-### Required
+EAAF Automation guides an enterprise architect through a structured, multi-stage assessment of a proposed digital service or application. At the end of the assessment, it produces a formal recommendation report that recommends one of four BC Government–approved delivery platforms:
 
-- **Node.js 18+** — [Download from nodejs.org](https://nodejs.org)
-  - Needed for Next.js, npm packages, TypeScript scripts
-  - Verify: `node --version`
+- **Salesforce** — citizen-facing portals, CRM, case management
+- **ServiceNow** — IT service management, workflow automation, incident management
+- **Microsoft Power Platform** — low-code applications, internal tooling, M365-integrated workflows
+- **Custom Build** — unique requirements that cannot be met by an existing platform
 
-### Optional but Recommended
-
-- **Python 3.8+** — [Download from python.org](https://www.python.org/downloads/)
-  - Needed for local embedding service (historical assessment similarity matching)
-  - If skipped: App still works, but historical comparison features won't run
-  - Verify: `python --version`
+The recommendation is determined entirely by a **Rules Based Decision Engine** — a deterministic scoring system driven by predefined architecture rules. There is no black-box AI involved in the platform selection.
 
 ---
 
-## Files Your Team Must Provide
+## How It Works
 
-Before running setup, request these files from your team lead (not in git repo):
+### Assessment Stages
 
-| File | Purpose | Required? |
-|------|---------|-----------|
-| `seed-data/seed-questions.local.json` | Question hierarchy & assessment steps | **Yes** |
-| `seed-data/assessments-seed.local.json` | Historical assessment records | No (app works without) |
+Each assessment moves through five sequential stages:
 
-These are excluded from git because they contain team-specific data. **Never commit them.**
+| Stage | Purpose |
+|-------|---------|
+| **1. Architecture** | Current-state architecture, integration needs, data classification |
+| **2. Cloud Assessment** | Cloud hosting model, SaaS vs PaaS preferences, security posture |
+| **3. Platform Assessment** | Workflow complexity, licensing constraints, vendor alignment |
+| **4. Operational Considerations** | Team capability, timeline, governance, support model |
+| **5. Final Recommendation** | Automated report with platform recommendation and rationale |
 
----
+### Recommendation Report
 
-## Getting Started (5 Minutes)
+The final report produced at Stage 5 includes:
 
-### 1. Clone and Open
-
-```bash
-git clone https://github.com/ghsansin/eaaf-automation.git
-cd eaaf-automation
-```
-
-### 2. Run Setup Script
-
-**PowerShell (Windows):**
-
-```powershell
-.\setup-dev.ps1
-```
-
-This single command does everything:
-- ✅ Enables PowerShell script execution (if needed)
-- ✅ Creates Python virtual environment and installs Flask/sentence-transformers
-- ✅ Installs npm dependencies
-- ✅ Creates SQLite database
-- ✅ Seeds question hierarchy (from your `seed-data/seed-questions.local.json`)
-- ✅ Seeds historical assessments (if available)
-- ✅ Starts embedding service on `http://127.0.0.1:8001` (using isolated venv)
-
-**Optional flags:**
-```powershell
-.\setup-dev.ps1 -Clean            # Delete db, venv, node_modules; rebuild from scratch
-.\setup-dev.ps1 -StartDev         # Auto-start dev server immediately
-.\setup-dev.ps1 -SkipEmbeddings   # Skip embedding service
-.\setup-dev.ps1 -SkipSeed         # Skip data seeding
-```
-
-Important:
-- `./setup-dev.ps1` prepares the environment and may start the embedding service, but it does **not** keep a Next.js app server running unless you pass `-StartDev`.
-- If you do not use `-StartDev`, run `npm run dev` manually from the `eaaf-automation` folder.
-- In PowerShell, use `;` (not `&&`) when chaining commands, for example: `cd eaaf-automation; npm run dev`.
-
-**Resetting Everything:**
-
-If you need a completely fresh environment (corrupted DB, stale dependencies, etc.):
-
-```powershell
-.\setup-dev.ps1 -Clean
-```
-
-This will:
-- Delete `data/app.db` (database)
-- Delete `local-embedding-service\.venv` (Python environment)
-- Delete `node_modules` (npm dependencies)
-- Then run the full setup from scratch
-
-You can combine flags:
-```powershell
-.\setup-dev.ps1 -Clean -StartDev           # Clean rebuild + auto-start dev server
-.\setup-dev.ps1 -Clean -SkipEmbeddings     # Clean rebuild without embeddings
-```
-
-**Expected output (without `-StartDev`):**
-```
-╔════════════════════════════════════════════════════════════════╗
-║         EAAF Automation — Local Development Setup             ║
-╚════════════════════════════════════════════════════════════════╝
-
-[1/7] Checking PowerShell execution policy...
-  ✓ Execution policy OK (RemoteSigned)
-
-[2/7] Checking prerequisites...
-  ✓ Node.js v18.17.0
-  ✓ Python 3.11.5
-
-[3/7] Setting up Python embedding service environment...
-  ✓ Virtual environment created
-  ✓ Python dependencies installed
-
-[4/7] Installing npm dependencies...
-  ✓ Dependencies installed
-
-[5/7] Initializing database...
-  ✓ Database initialized
-
-[6/7] Seeding assessment data...
-  ✓ Assessment data seeded
-
-[7/7] Starting local embedding service...
-  ✓ Embedding service started (PID: 12345)
-
-╔════════════════════════════════════════════════════════════════╗
-║                     Setup complete! ✓                         ║
-╚════════════════════════════════════════════════════════════════╝
-
-🚀 Start the development server with:
-   npm run dev
-
-  Open http://localhost:3000/eaaf-automation in your browser
-```
-
-**Expected output (with `-StartDev`):**
-```
-[... steps 1-7 same as above ...]
-
-╔════════════════════════════════════════════════════════════════╗
-║                     Setup complete! ✓                         ║
-╚════════════════════════════════════════════════════════════════╝
-
-🚀 Starting development server...
-  Open http://localhost:3000/eaaf-automation in your browser
-
-> next dev
-▲ Next.js 16.2.7
-- Local:        http://localhost:3000/eaaf-automation
-```
-
-Server is now running. Just open the browser URL above.
-
-### 3. Start Development Server
-
-If you ran setup **without** `-StartDev` flag:
-
-```bash
-npm run dev
-```
-
-Run this command from the `eaaf-automation` directory (the folder that contains `package.json`).
-
-Then open **http://localhost:3000/eaaf-automation** in your browser.
-
-(If you used `.\setup-dev.ps1 -StartDev`, the server is already running — just open the browser.)
+1. **Platform Recommendation** — the selected platform with confidence score
+2. **Assessment Responses** — full record of all responses across all stages
+3. **Assessment Signals and Scoring Evidence** — which responses triggered which scoring rules and why
+4. **Platform Evaluation** — all four platforms assessed and scored, with rationale for why each was or was not selected
+5. **Rules Based Decision Engine** — the deterministic scoring result with confidence breakdown
+6. **Historical Precedent** — similar past assessments and how they compare
+7. **Institutional Confidence** — evidence quality assessment and low-signal advisory
+8. **Jurisdiction Scan** *(AI-assisted)* — real-world Canadian public sector implementations most closely aligned with this assessment
+9. **Innovative Solutions** *(AI-assisted)* — exploratory architectural alternatives and variations
+10. **Final Recommendation Sign-off** — architect confirmation recorded for governance
 
 ---
 
-## Quick Reference — Running Commands
+## Configuring the Scoring Rules
 
-### Every Development Session
+The platform recommendation logic is driven by a single configuration file:
 
-```bash
-npm run dev          # Start Next.js server (port 3000)
-```
+### `rules/eaaf-rules.json`
 
-If the embedding service isn't running, start it in another terminal:
+This is the master configuration for the entire scoring engine. All rule changes are made here — no code changes are needed for most adjustments.
 
-```bash
-npm run embeddings:service    # Start on http://127.0.0.1:8001
-```
+| Section in the file | What it controls |
+|--------------------|-----------------|
+| `platformRules.scoringRules` | Keywords that trigger scoring for each platform, with point values |
+| `platformRules.platformDisplay` | Display names for each platform |
+| `platformRules.platformStrengths` | Strengths listed in the Platform Evaluation section |
+| `platformRules.platformWeaknesses` | Weaknesses listed in the Platform Evaluation section |
+| `explanations.signalMetadata` | Human-readable names and explanations for each scoring signal — provide an entry per question key to replace the auto-derived label |
+| `explanations.default` | Fallback signal name, stage, and interpretation text when no signal metadata entry exists |
+| `platformGuidance.platformAssessments` | Organizational readiness scores, timeline risks, team capability gaps, and governance risk per platform — shown in the Platform Evaluation section |
+| `similarity.categoryModel` | Dimension weights used when comparing assessments for similarity (e.g., 20% for business domain, 15% for integration complexity) |
+| `similarity.stopWords` | Common words ignored during text comparison |
 
-### Database & Seeding
+**To adjust scoring:** Open `rules/eaaf-rules.json`, find the question key under `platformRules.scoringRules`, and add, remove, or reweight keywords.
 
-```bash
-npm run db:init                  # Create/reset database schema
-npm run db:seed:assessments      # Load historical assessments
-npm run export:assessments       # Export current DB to seed file
-```
+**To give a signal a proper name:** Add an entry to `explanations.signalMetadata` keyed by the question key (e.g., `"CLOUD_SAAS_001"`). Without an entry, the app auto-derives a readable name from the key.
 
-### Build & Deployment
+**To change platform narratives:** Edit `lib/deterministic/institutional-knowledge-low-signal-report.ts` — the `INSTITUTIONAL_KNOWLEDGE_PLATFORM_PROFILES` array controls the prose descriptions of each platform's pros, cons, and best-fit scenarios.
 
-```bash
-npm run build       # Production build
-npm run lint        # Check code quality
-```
+### Confidence Formulas
 
-### Health Dashboard
-
-Open the live diagnostics dashboard:
-
-```text
-http://localhost:3000/eaaf-automation/health
-```
-
-This page checks:
-- App server rendering
-- Database initialization and required tables
-- Seed data presence
-- Local embedding service readiness (`http://127.0.0.1:8001/health`)
-
-When a check fails, the page shows specific fix commands aligned to this README.
+| File | What it controls |
+|------|-----------------|
+| `lib/deterministic/confidence-institutional-knowledge-report.ts` | How deterministic evidence contributes to the confidence score |
+| `lib/deterministic/confidence-similarity-report.ts` | How historical match quality contributes to confidence |
 
 ---
 
-## What Each Tool Does
+## AI-Assisted Features
 
-### Embedding Service (`http://127.0.0.1:8001`)
+Two sections of the report use an external AI model (configured in `.env.local`):
 
-**What it is:** Local Flask server using `all-MiniLM-L6-v2` sentence transformer
+| Feature | Report Section | What it produces |
+|---------|---------------|-----------------|
+| **Jurisdiction Scan** | Section 8 | Real-world Canadian public sector precedents most similar to this assessment |
+| **Innovative Solutions** | Section 9 | Exploratory architectural alternatives and variations |
 
-**What it does:**
-- Converts assessment responses into mathematical vectors (embeddings)
-- Compares new assessments against historical ones
-- Powers the "Similar Assessments" feature on recommendation page
+These features do not influence the platform recommendation. Results are AI-generated and require independent verification before use in governance submissions.
 
-**Why it's optional:**
-- Deterministic engine (rule-based scoring) works without it
-- Similarity feature just won't show historical matches
-- Useful for learning patterns, not required for core functionality
+AI results are **cached** after the first run. Subsequent loads of the same assessment show the cached result instantly without re-running the AI, unless the architect explicitly clicks "Re-run."
 
-**Why this model:**
-- Runs fully offline (no API key, no external dependency)
-- Good balance of quality and speed for typical assessment text
-- Stable support via sentence-transformers community
-
-**Started by:** `setup-dev.ps1` in background automatically
-
-**Manual start:**
-```bash
-npm run embeddings:service
-```
-
-### Database (SQLite at `lib/db/app.db`)
-
-**What it stores:**
-- Assessment questions and steps (from `seed-questions.local.json`)
-- Historical assessment records (from `assessments-seed.local.json`)
-- Embeddings for similarity matching
-
-**Initialized by:** `npm run db:init` (runs `scripts/init-db.ts`)
-
-**Never commit:** The `.gitignore` protects local seed data files
+The AI provider, model, and API key are set in `.env.local` — see the environment configuration below.
 
 ---
 
-## Troubleshooting
+## Environment Configuration (`.env.local`)
 
-### "Python not found" during setup
+This file is not committed to git. Each developer creates their own local copy. The variables it must contain:
 
-**If you see:** `⚠ Python not available — skipping embedding service`
+| Variable | Purpose | Example value |
+|----------|---------|---------------|
+| `JURISDICTION_AI_PROVIDER` | AI provider for jurisdiction scan and innovative solutions | `gemini` |
+| `JURISDICTION_AI_ENDPOINT` | API base URL for the AI provider | `https://generativelanguage.googleapis.com/v1beta` |
+| `JURISDICTION_AI_KEY` | API key | *(from team lead)* |
+| `JURISDICTION_AI_MODEL` | Model name | `gemini-2.5-flash` |
+| `JURISDICTION_REGIONS` | Regions to scan (comma-separated) | `canada` or `canada,us,europe,other` |
+| `JURISDICTION_AI_MAX_TOKENS` | Max response token limit | `8000` |
+| `JURISDICTION_AI_TEMPERATURE` | AI temperature — lower = more factual | `0.2` |
+| `INNOVATIVE_AI_TEMPERATURE` | AI temperature for innovative solutions | `0.7` |
 
-**This means:** Python isn't installed or not in your PATH
-
-**To fix:**
-1. Install Python 3.8+ from [python.org](https://www.python.org/downloads/)
-2. Make sure to check "Add Python to PATH" during installation
-3. Restart your terminal and run `setup-dev.ps1` again
-
-**It's optional:** App still works without it. Just run `npm run dev` to proceed.
-
-### "pip install failed" during setup
-
-**If you see:** `✗ pip install failed`
-
-**This means:** Python packages couldn't be installed into the virtual environment
-
-**To fix manually:**
-```powershell
-cd local-embedding-service
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-Note: `sentence-transformers` and `torch` are large packages — first install may take several minutes on slow connections.
-
-### "Cannot find seed-data files"
-
-**If you see:** `⚠ seed-data/seed-questions.local.json not found`
-
-**This means:** Your team hasn't provided the seed data
-
-**To fix:**
-1. Request `seed-data/seed-questions.local.json` and `seed-data/assessments-seed.local.json` from your team lead
-2. Place them in the `seed-data/` folder (root of project)
-3. Run `setup-dev.ps1` again
-
-**It's required for questions:** The database needs the question hierarchy to function
-
-### "setup-dev.ps1 cannot be loaded"
-
-**If you see:** `cannot be loaded because running scripts is disabled on this system`
-
-**This means:** PowerShell execution policy is too restrictive
-
-**To fix manually:**
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-Or just run `setup-dev.ps1` and it will fix itself automatically.
-
----
-
-## Architecture Overview
-
-### Recommendation Engine (Deterministic)
-
-**What it does:** Analyzes assessment responses and recommends one of 4 platforms:
-- Salesforce
-- ServiceNow
-- Microsoft Power Platform
-- Custom Build
-
-**How it works:**
-1. Matches keywords from responses against scoring rules (`lib/deterministic/engine.ts`)
-2. Awards points to each platform based on matches
-3. Calculates confidence (how certain we are) based on completeness
-4. Returns detailed rationale with explanation of each signal
-
-**Where to tweak:** See [Institutional Knowledge Entry Points](#institutional-knowledge-entry-points)
-
-### Similarity Matching (Embedding-Based)
-
-**What it does:** Shows historical assessments similar to the current one
-
-**How it works:**
-1. Converts assessment text to numerical vectors (via embedding service)
-2. Compares current assessment against historical ones
-3. Returns top 3 matches with detailed comparison
-
-**Where to tweak:** `lib/similarity/engine.ts` (category weights, thresholds, narrative templates)
-
----
-
-## Institutional Knowledge Entry Points
-
-If you need to adjust scoring rules or platform data, edit these files:
-
-### Deterministic Scoring
-
-| File | What to Edit | Example |
-|------|--------------|---------|
-| `lib/deterministic/engine.ts` | `SCORING_RULES` array | Add keyword triggers for platforms |
-| `lib/deterministic/scoring-signal-explanation-metadata.ts` | `SIGNAL_METADATA` object | Explain why each keyword matters |
-| `lib/deterministic/institutional-knowledge-low-signal-report.ts` | `INSTITUTIONAL_KNOWLEDGE_PLATFORM_PROFILES` array | Platform pros/cons/best fit text |
-| `lib/deterministic/static-strategic-platform-fit-data.ts` | Readiness assessments | Timeline, team gaps, governance risk per platform |
-| `lib/deterministic/confidence-institutional-knowledge-report.ts` | Institutional confidence formulas | Adjust deterministic evidence confidence calculations |
-| `lib/deterministic/confidence-similarity-report.ts` | Similarity confidence formulas | Adjust historical alignment and similarity advisory confidence |
-
-### Similarity Matching
-
-| File | What to Edit | Example |
-|------|--------------|---------|
-| `lib/similarity/engine.ts` | `CATEGORY_MODEL` weights | Adjust importance of each dimension (15%, 20%, etc.) |
-| `lib/similarity/engine.ts` | `STOP_WORDS` array | Words to ignore during text comparison |
-| `lib/similarity/engine.ts` | `buildAssessmentProfile()` | Traits to detect (e.g., "citizen-facing", "integration-heavy") |
-
----
-
-## Development Workflow
-
-### First-Time Setup (One Time Only)
-
-```powershell
-.\setup-dev.ps1 -StartDev
-```
-
-This auto-starts the dev server. Or run without the flag and start it manually:
-```powershell
-.\setup-dev.ps1
-npm run dev
-```
-
-### Each Development Session
-
-1. **Terminal 1 — Dev server:**
-   ```bash
-   npm run dev
-   ```
-  Open http://localhost:3000/eaaf-automation in your browser
-
-2. **Terminal 2 — Embedding service (if needed):**
-   ```bash
-   npm run embeddings:service
-   ```
-   Runs on http://127.0.0.1:8001
-
-3. **Make code changes** — Next.js recompiles automatically
-
-4. **Check code quality:**
-   ```bash
-   npm run lint
-   ```
-
-### If You Stop the Embedding Service Accidentally
-
-```bash
-# Stop any running Python processes
-taskkill /F /IM python.exe
-
-# Or restart it cleanly
-npm run embeddings:service
-```
-
----
-
-## Git Workflow
-
-### Safe to Commit
-
-- All TypeScript, JavaScript, CSS, configuration files
-- `README.md`, documentation
-
-### Never Commit
-
-- `seed-data/seed-questions.local.json`
-- `seed-data/assessments-seed.local.json`
-- `lib/db/app.db` (database file)
-- `node_modules/`, `dist/`, `.next/`
-
-The `.gitignore` blocks these automatically.
+Request the key values from your team lead.
 
 ---
 
 ## Frequently Asked Questions
 
-**Q: Do I need Python to develop?**
-A: No, only if you want the similarity feature. Run `npm run dev` and it works fine without it.
+**Q: Can a business owner or project sponsor use this tool?**
+A: The tool is designed for business owners and analysts who would work with enterprise architects.
 
-**Q: Can I commit seed data?**
-A: No — these are team-specific and kept local. Export your DB changes via `npm run export:assessments`.
+**Q: Does AI choose the recommended platform?**
+A: No. The platform recommendation is made exclusively by the Rules Based Decision Engine — a deterministic, rule-driven system defined by enterprise architects. The AI-assisted sections (Jurisdiction Scan, Innovative Solutions) provide supporting context only and have no influence on the platform selection.
 
-**Q: What if the app crashes?**
-A: Check the terminal for error messages. Most issues are:
-- Missing `seed-questions.local.json` → Ask team lead
-- Python path issues → Restart terminal and re-run `setup-dev.ps1`
-- Port conflicts → Another app is using 3000 or 8001
+**Q: Can the scoring rules be changed without a developer?**
+A: Yes, for most changes. The `rules/eaaf-rules.json` file is plain JSON and can be edited directly. Changes to keyword triggers, point values, platform narrative text, and confidence parameters do not require code changes.
 
-**Q: How do I contribute changes?**
-A: Create a feature branch, make changes, run `npm run lint`, commit, and push to GitHub.
+**Q: How is historical precedent used?**
+A: Past assessments stored in the database are compared against the current assessment using an embedding-based similarity model. The top matching historical assessments are displayed in the report as supporting context, alongside a detailed breakdown of what they have in common with the current assessment and where they differ.
+
+**Q: What happens if no historical assessments exist?**
+A: The recommendation engine works fully without them. The Historical Precedent and Similarity sections of the report will be empty, and the confidence score will reflect the absence of historical alignment.
+
+**Q: Can an architect override the recommendation?**
+A: The architect confirms or overrides the recommendation in Section 10 (Final Recommendation Sign-off). This decision is recorded for governance purposes. It does not change the underlying scoring or affect future assessments.
+
+---
+
+## Developer Setup
+
+If you are setting up a local development environment, see **[SETUP.md](SETUP.md)**.
+
+Start from the `main` branch:
+**https://github.com/ghsansin/eaaf-automation/tree/main**
+
+Always cut a new branch from `main` before making changes:
+
+```bash
+git checkout main
+git pull origin main
+git checkout -b feature/your-branch-name
+```
 
 ---
 
 ## Support
 
-For questions or issues:
-1. Check this README first
-2. Ask your team lead for team-specific setup help
-3. Check GitHub Issues: https://github.com/ghsansin/eaaf-automation/issues
+1. For setup issues, follow the step-by-step guide in [SETUP.md](SETUP.md)
+2. For team-specific configuration (seed data, API keys), contact your team lead
+3. GitHub Issues: https://github.com/ghsansin/eaaf-automation/issues
+

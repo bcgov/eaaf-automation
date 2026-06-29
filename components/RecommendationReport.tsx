@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import styles from "./RecommendationReport.module.css";
-import JurisdictionScan, { JurisdictionScanSummary } from "./JurisdictionScan";
-import InnovativeSolutions, { InnovativeSolutionsSummary } from "./InnovativeSolutions";
+import JurisdictionScan, { JurisdictionScanSummary, JurisdictionScanResult } from "./JurisdictionScan";
+import InnovativeSolutions, { InnovativeSolutionsSummary, InnovativeSolutionsResult } from "./InnovativeSolutions";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -15,6 +15,7 @@ interface EnrichedSignal {
   signalName: string;
   stageName: string;
   factorName: string;
+  concept?: string;
   responseEvidence: string;
   architecturalInterpretation: string;
   whyItMatters: string;
@@ -133,6 +134,8 @@ interface FullRec {
   aiTransparency: AiTransparency;
   aiStrategicAssessment: AiStrategicAssessment | null;
   assembledDocument?: { summary: string; platformAnalysis: string; nextSteps: string; disclaimer: string } | null;
+  cachedJurisdictionScan?: JurisdictionScanResult | null;
+  cachedInnovativeSolutions?: InnovativeSolutionsResult | null;
 }
 interface Props {
   assessmentId: number;
@@ -637,9 +640,10 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
           <SubSection title="Assessment Metadata Signals" badge={`${metadataSignals.length}`} defaultOpen={false}>
             <p className={styles.sectionExplanation}>These signals come from Business Context, Business Goals, Business Drivers, and Business Requirement fields captured before question-level scoring.</p>
             {metadataSignals.map((sig, i) => (
-              <SubSection key={`meta-${i}`} title={sig.signalName} badge={`${sig.stageName} › ${sig.factorName}`} defaultOpen={false}>
+              <SubSection key={`meta-${i}`} title={sig.signalName} badge={sig.factorName !== sig.signalName ? `${sig.stageName} › ${sig.factorName}` : sig.stageName} defaultOpen={false}>
                 <div className={styles.signalBody}>
-                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Response Evidence</div><div className={styles.signalEvidence}>&quot;{sig.responseEvidence}&quot;</div></div>
+                  {sig.concept && <div className={styles.signalRow}><div className={styles.signalRowLabel}>Assessment Concept</div><div className={`${styles.signalText} ${styles.signalConcept}`}>{sig.concept}</div></div>}
+                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Evidence Found</div><div className={styles.signalEvidence}>&quot;{sig.responseEvidence}&quot;</div></div>
                   <div className={styles.signalRow}><div className={styles.signalRowLabel}>Architectural Interpretation</div><div className={styles.signalText}>{sig.architecturalInterpretation}</div></div>
                   <div className={styles.signalRow}><div className={styles.signalRowLabel}>Why This Matters</div><div className={styles.signalText}>{sig.whyItMatters}</div></div>
                   <div className={styles.signalRow}>
@@ -668,9 +672,10 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
           <SubSection title="Stage-Based Assessment Signals" badge={`${journeySignals.length}`} defaultOpen={false}>
             <p className={styles.sectionExplanation}>These signals are derived from Architecture, Cloud, Platform, and Operational stage responses.</p>
             {journeySignals.map((sig, i) => (
-              <SubSection key={i} title={sig.signalName} badge={`${sig.stageName} › ${sig.factorName}`} defaultOpen={false}>
+              <SubSection key={i} title={sig.signalName} badge={sig.factorName !== sig.signalName ? `${sig.stageName} › ${sig.factorName}` : sig.stageName} defaultOpen={false}>
                 <div className={styles.signalBody}>
-                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Response Evidence</div><div className={styles.signalEvidence}>&quot;{sig.responseEvidence}&quot;</div></div>
+                  {sig.concept && <div className={styles.signalRow}><div className={styles.signalRowLabel}>Assessment Concept</div><div className={`${styles.signalText} ${styles.signalConcept}`}>{sig.concept}</div></div>}
+                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Evidence Found</div><div className={styles.signalEvidence}>&quot;{sig.responseEvidence}&quot;</div></div>
                   <div className={styles.signalRow}><div className={styles.signalRowLabel}>Architectural Interpretation</div><div className={styles.signalText}>{sig.architecturalInterpretation}</div></div>
                   <div className={styles.signalRow}><div className={styles.signalRowLabel}>Why This Matters</div><div className={styles.signalText}>{sig.whyItMatters}</div></div>
                   <div className={styles.signalRow}>
@@ -1066,9 +1071,9 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
           Identifies real-world Canadian public sector implementations most closely aligned with this
           assessment&apos;s business problem, drivers, requirements, current state, and proposed solution.
           Results are generated by an AI model and require independent verification before use
-          in governance submissions. Requires <code>JURISDICTION_AI_KEY</code> and <code>JURISDICTION_AI_ENDPOINT</code> in <code>.env.local</code>.
+          in governance submissions.
         </p>
-        <JurisdictionScan assessmentId={assessmentId} onResult={setJurisdictionSummary} />
+        <JurisdictionScan assessmentId={assessmentId} onResult={setJurisdictionSummary} initialResult={rec.cachedJurisdictionScan ?? null} />
       </Section>
 
       {/* 9 — AI-ASSISTED INNOVATIVE SOLUTIONS */}
@@ -1077,9 +1082,8 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
           Exploratory AI-generated alternatives and architectural variations related to the proposed solution.
           These ideas are intended to broaden architectural thinking and are not recommendations.
           They do not influence the deterministic platform decision.
-          Requires <code>JURISDICTION_AI_KEY</code> and <code>JURISDICTION_AI_ENDPOINT</code> in <code>.env.local</code>.
         </p>
-        <InnovativeSolutions assessmentId={assessmentId} onResult={setInnovativeSummary} />
+        <InnovativeSolutions assessmentId={assessmentId} onResult={setInnovativeSummary} initialResult={rec.cachedInnovativeSolutions ?? null} />
       </Section>
 
       {/* 10 — FINAL RECOMMENDATION */}

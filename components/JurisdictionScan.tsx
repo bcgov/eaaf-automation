@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./JurisdictionScan.module.css";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -19,7 +19,7 @@ interface JurisdictionEntry {
   alignmentRationale: string;
 }
 
-interface JurisdictionScanResult {
+export interface JurisdictionScanResult {
   canada: JurisdictionEntry[];
   us: JurisdictionEntry[];
   europe: JurisdictionEntry[];
@@ -57,6 +57,7 @@ export interface JurisdictionScanSummary {
 interface Props {
   assessmentId: number;
   onResult?: (summary: JurisdictionScanSummary) => void;
+  initialResult?: JurisdictionScanResult | null;
 }
 
 // ── Region metadata ───────────────────────────────────────────────────────
@@ -208,10 +209,31 @@ function RegionSection({
 
 // ── Main component ────────────────────────────────────────────────────────
 
-export default function JurisdictionScan({ assessmentId, onResult }: Props) {
+export default function JurisdictionScan({ assessmentId, onResult, initialResult }: Props) {
   const [scanning, setScanning] = useState(false);
-  const [result, setResult] = useState<JurisdictionScanResult | null>(null);
+  const [result, setResult] = useState<JurisdictionScanResult | null>(() => initialResult ?? null);
   const [error, setError] = useState<string | null>(null);
+
+  // Fire onResult once on mount if we were given cached data
+  useEffect(() => {
+    if (!initialResult || !onResult) return;
+    const regions = initialResult.configuredRegions ?? ["canada"];
+    const allEntries = regions.flatMap(r => initialResult[r as RegionKey] ?? []);
+    const sorted = [...allEntries].sort((a, b) => b.alignmentScore - a.alignmentScore);
+    onResult({
+      totalCount: allEntries.length,
+      regions,
+      topEntries: sorted.slice(0, 2).map(e => ({
+        organization: e.organization,
+        jurisdiction: e.jurisdiction,
+        platform: e.platform,
+        outcome: e.outcome,
+        alignmentScore: e.alignmentScore,
+        alignmentRationale: e.alignmentRationale,
+      })),
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const runScan = async () => {
     setScanning(true);

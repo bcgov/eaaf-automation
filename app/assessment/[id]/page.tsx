@@ -239,8 +239,7 @@ export default function AssessmentPage({ params }: { params: Promise<{ id: strin
   const answeredCount = questions.filter(q => !!(responses[q.question_key] ?? "").trim()).length;
   const filteredQuestions = qSearch.trim()
     ? questions.filter(q =>
-        q.question_text.toLowerCase().includes(qSearch.toLowerCase()) ||
-        q.question_key.toLowerCase().includes(qSearch.toLowerCase())
+        q.question_text.toLowerCase().includes(qSearch.toLowerCase())
       )
     : questions;
   const selectedQ = questions[selectedQIdx] ?? questions[0] ?? null;
@@ -351,9 +350,8 @@ export default function AssessmentPage({ params }: { params: Promise<{ id: strin
                           >
                             <div className={styles.qListItemInner}>
                               <div>
-                                <div className={styles.qListItemCode}>{q.question_key}</div>
                                 <div className={styles.qListItemText}>
-                                  {q.question_text.length > 55 ? q.question_text.slice(0, 55) + "…" : q.question_text}
+                                  {q.question_text.length > 60 ? q.question_text.slice(0, 60) + "…" : q.question_text}
                                 </div>
                               </div>
                               {isAnswered && <span className={styles.qListItemCheck}>✓</span>}
@@ -369,7 +367,6 @@ export default function AssessmentPage({ params }: { params: Promise<{ id: strin
                     {selectedQ && (
                       <>
                         <div className={styles.qDetailHeader}>
-                          <span className={styles.qDetailKey}>{selectedQ.question_key}</span>
                           <p className={styles.qDetailText}>{selectedQ.question_text}</p>
                         </div>
 

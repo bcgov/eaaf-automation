@@ -558,6 +558,7 @@
   line-height: 1.6;
 }
 .signalText { font-size: .875rem; color: var(--text-secondary); line-height: 1.6; }
+.signalConcept { font-weight: 600; color: var(--text-primary); font-size: .9rem; }
 .platformImpactList { display: flex; flex-direction: column; gap: .4rem; }
 .platformImpactItem {
   display: grid;
