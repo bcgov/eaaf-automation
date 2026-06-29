@@ -17,10 +17,12 @@ function formatQuestionKey(key: string): string {
  */
 function deriveStageFromKey(key: string, defaultStageName: string): string {
   const upper = key.toUpperCase();
-  if (upper.startsWith("ARCH")) return "Architecture";
+  // Q-prefixed numeric keys (Q001, Q009, Q010, etc.) are Architecture stage questions
+  if (/^Q\d/i.test(upper)) return "Architecture Assessment";
+  if (upper.startsWith("ARCH")) return "Architecture Assessment";
   if (upper.startsWith("CLOUD")) return "Cloud Assessment";
   if (upper.startsWith("PLAT")) return "Platform Assessment";
-  if (upper.startsWith("OPS") || upper.startsWith("OPER")) return "Operations";
+  if (upper.startsWith("OPS") || upper.startsWith("OPER")) return "Operational Considerations";
   if (upper.startsWith("META") || upper.startsWith("BUSI") || upper.startsWith("CONTEXT")) return "Assessment Metadata";
   return defaultStageName;
 }
@@ -60,35 +62,45 @@ export function buildScoringSignalExplanations(
   return scoringHits.map((hit) => {
     const meta = EAAF_RULES.explanations.signalMetadata[hit.questionKey];
 
+    // Use the concept name from the rule as the primary signal identifier.
+    // This is the human-readable architectural concept, not the internal question key.
+    const conceptName =
+      hit.concept ?? meta?.signalName ?? formatQuestionKey(hit.questionKey);
+
     const platformRationale = (Object.entries(hit.platformPoints) as [Platform, number][])
       .filter(([, pts]) => typeof pts === "number")
       .map(([p, pts]) => {
-        const platformTemplate = meta?.platformReasoning?.[p];
-        const reasoning = platformTemplate
-          ? formatRuleTemplate(platformTemplate, { points: pts, platformLabel: platformLabel(p) })
-          : formatRuleTemplate(defaults.platformReasoningTemplate, {
-              platformLabel: platformLabel(p),
+        // Use concept-driven reasoning — never expose matched keywords or scoring mechanics.
+        const reasoning = meta?.platformReasoning?.[p]
+          ? formatRuleTemplate(meta.platformReasoning[p], {
               points: pts,
-              signedPoints: `${pts > 0 ? "+" : ""}${pts}`,
-            });
+              platformLabel: platformLabel(p),
+            })
+          : pts > 0
+          ? `${conceptName} requirements indicate strong alignment with ${platformLabel(p)} capabilities (+${pts} pts).`
+          : `${conceptName} requirements indicate reduced alignment with ${platformLabel(p)} for this use case (${pts} pts).`;
 
-        return {
-          platform: p,
-          points: pts,
-          reasoning,
-        };
+        return { platform: p, points: pts, reasoning };
       });
 
+    // Architectural Interpretation: use the rule's concept description (conceptual, keyword-free).
+    // Falls back to a clean generated sentence if no description is available.
+    const architecturalInterpretation =
+      hit.description ??
+      (meta?.interpretationTemplate
+        ? formatRuleTemplate(meta.interpretationTemplate, {
+            keyword: hit.keywordMatched,
+            snippet: hit.responseSnippet,
+          })
+        : `${conceptName} requirements were identified in the assessment responses, contributing to the platform suitability evaluation.`);
+
     return {
-      signalName: meta?.signalName ?? formatQuestionKey(hit.questionKey),
+      signalName: conceptName,
       stageName: meta?.stageName ?? deriveStageFromKey(hit.questionKey, defaults.stageName),
-      factorName: meta?.factorName ?? formatQuestionKey(hit.questionKey),
+      factorName: conceptName,
       concept: hit.concept,
       responseEvidence: hit.responseSnippet,
-      architecturalInterpretation: formatRuleTemplate(
-        meta?.interpretationTemplate ?? defaults.interpretationTemplate,
-        { keyword: hit.keywordMatched, snippet: hit.responseSnippet }
-      ),
+      architecturalInterpretation,
       whyItMatters: hit.ruleWhyItMatters ?? meta?.whyItMatters ?? defaults.whyItMatters,
       platformRationale,
     };

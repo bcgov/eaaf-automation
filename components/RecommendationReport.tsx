@@ -320,8 +320,29 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
 
   const { assessmentMeta, stepsWithData, historicalPrecedentMatches, historicalAlignment, aiTransparency, platformScores, enrichedSignals, institutionalConfidence, confidenceBreakdown } = rec;
   const allSignals = enrichedSignals ?? [];
-  const metadataSignals = allSignals.filter((sig) => sig.stageName === "Assessment Metadata");
-  const journeySignals = allSignals.filter((sig) => sig.stageName !== "Assessment Metadata");
+
+  // Group signals by assessment stage in defined evaluation order
+  const SIGNAL_STAGE_ORDER = [
+    "Architecture Assessment",
+    "Cloud Assessment",
+    "Platform Assessment",
+    "Operational Considerations",
+    "Assessment Metadata",
+  ];
+  const SIGNAL_STAGE_DESCRIPTIONS: Record<string, string> = {
+    "Architecture Assessment": "Signals derived from Architecture stage responses, including identity, security, integration, and infrastructure considerations.",
+    "Cloud Assessment": "Signals derived from Cloud Assessment responses covering SaaS fit, cloud constraints, and build vs. buy analysis.",
+    "Platform Assessment": "Signals derived from Platform Assessment responses covering CRM, workflow, low-code, integration, and ecosystem fit.",
+    "Operational Considerations": "Signals derived from Operational Considerations responses covering support models, team capability, compliance, and risk.",
+    "Assessment Metadata": "Signals derived from Business Context, Business Goals, Business Drivers, and Business Requirement fields.",
+  };
+  const knownStages = new Set(SIGNAL_STAGE_ORDER);
+  const signalsByStage = SIGNAL_STAGE_ORDER
+    .map(stage => ({ stage, signals: allSignals.filter(sig => sig.stageName === stage) }))
+    .filter(({ signals }) => signals.length > 0);
+  // Capture any signals whose stage wasn't matched by the known order
+  const otherSignals = allSignals.filter(sig => !knownStages.has(sig.stageName));
+
   const deterministicSuitabilityScore = rec.deterministicSuitabilityScore ?? rec.confidenceScore;
   const sortedPlatformScores = [...platformScores].sort((a, b) => b.score - a.score);
   const archStepResponses = stepsWithData?.find(s => s.stepKey === "ARCHITECTURE")?.questionsAndResponses.filter(q => q.response_text?.trim()) ?? [];
@@ -473,31 +494,21 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
                 {institutionalConfidence?.basis && (
                   <span className={styles.execConfBasis}> — {institutionalConfidence.basis}</span>
                 )}
-                {(historicalPrecedentMatches?.length ?? 0) > 0 ? (
-                  <span className={styles.execConfHistorical}>
-                    {" "}{historicalPrecedentMatches.length} similar past assessment{historicalPrecedentMatches.length !== 1 ? "s" : ""} found within the organization
-                    {historicalPrecedentMatches[0] ? (
-                      <> — closest match: <strong>{historicalPrecedentMatches[0].name}</strong> ({Math.round(historicalPrecedentMatches[0].similarityScore)}% similar, used <strong>{historicalPrecedentMatches[0].platform}</strong>)</>
-                    ) : null}.
-                  </span>
-                ) : (
-                  <span className={styles.execConfHistorical}> No comparable internal assessments on record.</span>
-                )}
               </div>
             </div>
 
             {/* 4 — Jurisdictional Scan */}
             <div className={styles.execSection}>
-              <div className={styles.execLabel}>Jurisdictional Scan <span className={styles.execAiTag}>(AI Assisted)</span></div>
+              <div className={styles.execLabel}>Comparable Organizations</div>
               <div className={styles.execValue}>
                 {jurisdictionSummary ? (
                   <>
                     <span>{jurisdictionSummary.totalCount} comparable public sector implementation{jurisdictionSummary.totalCount !== 1 ? "s" : ""} identified across {jurisdictionSummary.regions.join(", ")}.</span>
-                    {jurisdictionSummary.topEntries.map((entry, i) => (
-                      <span key={i} className={styles.execJurisdictionTop}>
-                        <strong>#{i + 1} {entry.organization}</strong> ({entry.jurisdiction}{entry.platform ? ` · ${entry.platform}` : ""}, {entry.alignmentScore}% alignment) — {entry.alignmentRationale || entry.outcome}
+                    {jurisdictionSummary.topEntries[0] && (
+                      <span className={styles.execJurisdictionTop}>
+                        {" "}Top match: <strong>{jurisdictionSummary.topEntries[0].organization}</strong> ({jurisdictionSummary.topEntries[0].jurisdiction}{jurisdictionSummary.topEntries[0].platform ? ` \u00b7 ${jurisdictionSummary.topEntries[0].platform}` : ""}) \u2014 {jurisdictionSummary.topEntries[0].outcome}
                       </span>
-                    ))}
+                    )}
                   </>
                 ) : (
                   <span className={styles.execPending}>Run the Jurisdictional Scan in Section 8 to populate this field.</span>
@@ -507,14 +518,15 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
 
             {/* 5 — Innovative Ideas */}
             <div className={styles.execSection}>
-              <div className={styles.execLabel}>Innovative Options <span className={styles.execAiTag}>(AI Assisted)</span></div>
+              <div className={styles.execLabel}>Innovative Options Considered</div>
               <div className={styles.execValue}>
                 {innovativeSummary ? (
                   <ul className={styles.execIdeaList}>
                     {innovativeSummary.topIdeas.map((idea, i) => (
                       <li key={i}>
-                        <strong>{idea.ideaName}</strong> — {idea.description}
-                        {idea.whyRelevant ? <span className={styles.execIdeaRelevance}> {idea.whyRelevant}</span> : null}
+                        <strong>{idea.ideaName}</strong>
+                        <span className={styles.execIdeaDesc}> — {idea.description}</span>
+                        
                       </li>
                     ))}
                   </ul>
@@ -529,9 +541,9 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
               <div className={styles.execLabel}>Final Recommendation</div>
               <div className={styles.execValue}>
                 <strong>{rec.displayName}</strong> is the recommended platform for {assessmentMeta?.name ?? "this assessment"}.
-                {" "}The assessment was conducted using a structured rules-based evaluation framework validated against {confidenceBreakdown?.totalAnswered ?? 0} architect responses.
-                {" "}Confidence in this recommendation is <strong>{institutionalConfidence?.label ?? "Low"}</strong>.
-                {" "}This recommendation is subject to final architect review and governance approval.
+                {" "}This recommendation is supported by a structured institutional knowledge evaluation and a review of historical comparable assessments.
+                {" "}Confidence in this recommendation is <strong>{institutionalConfidence?.label ?? "Low"}</strong>{institutionalConfidence?.basis ? ` — ${institutionalConfidence.basis}` : ""}.
+                {" "}This recommendation is subject to final architect review and governance approval before implementation.
               </div>
             </div>
 
@@ -633,51 +645,25 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
       {/* 3 — ASSESSMENT SIGNALS AND SCORING EVIDENCE */}
       <Section title="3. ASSESSMENT SIGNALS AND SCORING EVIDENCE" num="3" badge={`${allSignals.length} signal${allSignals.length === 1 ? "" : "s"}`} open={openSections.has("3")} onToggle={() => toggleSection("3")}>
         <p className={styles.logicIntro}>
-          Full scoring evidence is shown below. Assessment Metadata signals are listed separately, followed by stage-based assessment signals. Each signal includes response evidence, interpretation, why it matters, and platform impact.
+          Assessment signals are organised by evaluation stage. Each signal identifies an architectural concept detected in the assessment, the evidence found, the architectural interpretation, why it matters for platform selection, and the platform impact.
         </p>
 
-        {metadataSignals.length > 0 && (
-          <SubSection title="Assessment Metadata Signals" badge={`${metadataSignals.length}`} defaultOpen={false}>
-            <p className={styles.sectionExplanation}>These signals come from Business Context, Business Goals, Business Drivers, and Business Requirement fields captured before question-level scoring.</p>
-            {metadataSignals.map((sig, i) => (
-              <SubSection key={`meta-${i}`} title={sig.signalName} badge={sig.factorName !== sig.signalName ? `${sig.stageName} › ${sig.factorName}` : sig.stageName} defaultOpen={false}>
-                <div className={styles.signalBody}>
-                  {sig.concept && <div className={styles.signalRow}><div className={styles.signalRowLabel}>Assessment Concept</div><div className={`${styles.signalText} ${styles.signalConcept}`}>{sig.concept}</div></div>}
-                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Evidence Found</div><div className={styles.signalEvidence}>&quot;{sig.responseEvidence}&quot;</div></div>
-                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Architectural Interpretation</div><div className={styles.signalText}>{sig.architecturalInterpretation}</div></div>
-                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Why This Matters</div><div className={styles.signalText}>{sig.whyItMatters}</div></div>
-                  <div className={styles.signalRow}>
-                    <div className={styles.signalRowLabel}>Platform Impact</div>
-                    <div className={styles.platformImpactList}>
-                      {sig.platformRationale.map((pr, j) => (
-                        <div key={j} className={`${styles.platformImpactItem} ${pr.points > 0 ? styles.impactPos : styles.impactNeg}`}>
-                          <span className={styles.impactPts}>{pr.points > 0 ? `+${pr.points}` : pr.points} pts</span>
-                          <span className={styles.impactPlatform}>{pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform}</span>
-                          <span className={styles.impactReason}>{pr.reasoning}</span>
-                        </div>
-                      ))}
-                      {PLATFORM_ORDER.filter(p => !sig.platformRationale.some(pr => pr.platform === p)).map((platform, j) => {
-                        const favored = sig.platformRationale.filter(pr => pr.points > 0).map(pr => pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform).join(", ");
-                        return (<div key={`mu-${j}`} className={`${styles.platformImpactItem} ${styles.impactNeg}`}><span className={styles.impactPts}>0 pts</span><span className={styles.impactPlatform}>{platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : platform}</span><span className={styles.impactReason}>Not matched for this signal. Response evidence aligned more strongly with {favored || "other platform criteria"}.</span></div>);
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </SubSection>
-            ))}
-          </SubSection>
+        {allSignals.length === 0 && (
+          <div className={styles.noSignals}>No assessment signals were detected. Ensure substantive responses have been entered for all stages before generating this report.</div>
         )}
 
-        {journeySignals.length > 0 ? (
-          <SubSection title="Stage-Based Assessment Signals" badge={`${journeySignals.length}`} defaultOpen={false}>
-            <p className={styles.sectionExplanation}>These signals are derived from Architecture, Cloud, Platform, and Operational stage responses.</p>
-            {journeySignals.map((sig, i) => (
-              <SubSection key={i} title={sig.signalName} badge={sig.factorName !== sig.signalName ? `${sig.stageName} › ${sig.factorName}` : sig.stageName} defaultOpen={false}>
+        {signalsByStage.map(({ stage, signals }) => (
+          <SubSection key={stage} title={stage} badge={`${signals.length} concept${signals.length !== 1 ? "s" : ""}`} defaultOpen={false}>
+            {SIGNAL_STAGE_DESCRIPTIONS[stage] && (
+              <p className={styles.sectionExplanation}>{SIGNAL_STAGE_DESCRIPTIONS[stage]}</p>
+            )}
+            {signals.map((sig, i) => (
+              <SubSection key={i} title={sig.signalName} badge={sig.stageName} defaultOpen={false}>
                 <div className={styles.signalBody}>
                   {sig.concept && <div className={styles.signalRow}><div className={styles.signalRowLabel}>Assessment Concept</div><div className={`${styles.signalText} ${styles.signalConcept}`}>{sig.concept}</div></div>}
-                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Evidence Found</div><div className={styles.signalEvidence}>&quot;{sig.responseEvidence}&quot;</div></div>
+                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Evidence Found</div><div className={styles.signalEvidence}>&ldquo;{sig.responseEvidence}&rdquo;</div></div>
                   <div className={styles.signalRow}><div className={styles.signalRowLabel}>Architectural Interpretation</div><div className={styles.signalText}>{sig.architecturalInterpretation}</div></div>
-                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Why This Matters</div><div className={styles.signalText}>{sig.whyItMatters}</div></div>
+                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Why It Matters</div><div className={styles.signalText}>{sig.whyItMatters}</div></div>
                   <div className={styles.signalRow}>
                     <div className={styles.signalRowLabel}>Platform Impact</div>
                     <div className={styles.platformImpactList}>
@@ -690,7 +676,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
                       ))}
                       {PLATFORM_ORDER.filter(p => !sig.platformRationale.some(pr => pr.platform === p)).map((platform, j) => {
                         const favored = sig.platformRationale.filter(pr => pr.points > 0).map(pr => pr.platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : pr.platform).join(", ");
-                        return (<div key={`ju-${j}`} className={`${styles.platformImpactItem} ${styles.impactNeg}`}><span className={styles.impactPts}>0 pts</span><span className={styles.impactPlatform}>{platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : platform}</span><span className={styles.impactReason}>Not matched for this signal. Response evidence aligned more strongly with {favored || "other platform criteria"}.</span></div>);
+                        return (<div key={`u-${j}`} className={`${styles.platformImpactItem} ${styles.impactNeg}`}><span className={styles.impactPts}>0 pts</span><span className={styles.impactPlatform}>{platform === "MicrosoftPowerPlatform" ? "Microsoft Power Platform" : platform}</span><span className={styles.impactReason}>Not matched for this concept. Assessment evidence aligned more strongly with {favored || "other platform criteria"}.</span></div>);
                       })}
                     </div>
                   </div>
@@ -698,8 +684,21 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
               </SubSection>
             ))}
           </SubSection>
-        ) : (
-          <div className={styles.noSignals}>No assessment signals were detected. Ensure substantive responses have been entered for all stages before generating this report.</div>
+        ))}
+
+        {otherSignals.length > 0 && (
+          <SubSection title="Other Signals" badge={`${otherSignals.length}`} defaultOpen={false}>
+            {otherSignals.map((sig, i) => (
+              <SubSection key={i} title={sig.signalName} badge={sig.stageName} defaultOpen={false}>
+                <div className={styles.signalBody}>
+                  {sig.concept && <div className={styles.signalRow}><div className={styles.signalRowLabel}>Assessment Concept</div><div className={`${styles.signalText} ${styles.signalConcept}`}>{sig.concept}</div></div>}
+                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Evidence Found</div><div className={styles.signalEvidence}>&ldquo;{sig.responseEvidence}&rdquo;</div></div>
+                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Architectural Interpretation</div><div className={styles.signalText}>{sig.architecturalInterpretation}</div></div>
+                  <div className={styles.signalRow}><div className={styles.signalRowLabel}>Why It Matters</div><div className={styles.signalText}>{sig.whyItMatters}</div></div>
+                </div>
+              </SubSection>
+            ))}
+          </SubSection>
         )}
       </Section>
 

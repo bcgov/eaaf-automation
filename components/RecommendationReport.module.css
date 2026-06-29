@@ -1105,8 +1105,10 @@
 .execConfBasis { font-size: .875rem; color: var(--text-secondary); }
 .execJurisdictionTop { display: block; margin-top: .35rem; font-size: .875rem; color: #334; }
 .execPending { font-size: .85rem; color: #7a8aaa; font-style: italic; }
-.execIdeaList { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .3rem; }
+.execIdeaList { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .5rem; }
 .execIdeaList li { font-size: .875rem; color: #1e2d3d; }
+.execIdeaDesc { font-size: .875rem; color: #333; }
+.execIdeaRelevance { display: block; font-size: .8rem; color: #5a6a88; font-style: italic; margin-top: .2rem; padding-left: .5rem; border-left: 2px solid #c8d4ea; }
 .execConfHistorical { display: block; margin-top: .4rem; font-size: .85rem; color: var(--text-secondary); }
 .execAiTag { font-size: .68rem; font-weight: 400; color: #6677aa; font-style: italic; letter-spacing: .02em; text-transform: none; }
 .execIdeaRelevance { display: block; margin-top: .2rem; font-size: .8rem; color: #6677aa; font-style: italic; }

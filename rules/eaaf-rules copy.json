@@ -7,12 +7,6 @@
     "scoringRules": {
       "_comment": "Section 3 – Each rule generates an Assessment Signal with Response Evidence, Interpretation, Why It Matters, and Platform Impact",
 
-      "Q001": [
-        { "keywords": ["capability", "reuse", "enterprise", "shared"], "scores": { "Salesforce": 3, "ServiceNow": 3, "MicrosoftPowerPlatform": 2 } }
-      ],
-      "Q002": [
-        { "keywords": ["shared service", "standard", "align"], "scores": { "Salesforce": 3, "ServiceNow": 3, "MicrosoftPowerPlatform": 2 } }
-      ],
       "Q009": [
         { "keywords": ["incident manager", "change approver", "itsm role", "service desk role"], "scores": { "ServiceNow": 6 } },
         { "keywords": ["enterprise sso", "mfa privileged", "privileged role"], "scores": { "ServiceNow": 3, "Salesforce": 2 } }
