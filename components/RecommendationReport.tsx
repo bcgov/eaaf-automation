@@ -268,6 +268,28 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
     await loadReport(true);
   };
 
+  function printExecSummary() {
+    if (!showExecutiveSummary) setShowExecutiveSummary(true);
+    setTimeout(() => {
+      const style = document.createElement("style");
+      style.id = "__exec-print-style";
+      style.textContent = [
+        "@media print {",
+        "  body * { visibility: hidden; }",
+        "  #exec-panel-print, #exec-panel-print * { visibility: visible; }",
+        "  #exec-panel-print { position: absolute; left: 0; top: 0; width: 100%; padding: 2rem; }",
+        "}",
+      ].join("\n");
+      document.head.appendChild(style);
+      const cleanup = () => {
+        document.getElementById("__exec-print-style")?.remove();
+        window.removeEventListener("afterprint", cleanup);
+      };
+      window.addEventListener("afterprint", cleanup);
+      window.print();
+    }, 80);
+  }
+
   useEffect(() => {
     if (rec || generating) return;
     if (!existingRecommendation) return;
@@ -421,8 +443,8 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
           <span className={styles.toolbarSubtitle}>{assessmentMeta?.name} — BC Government EAAF Platform Evaluation</span>
         </div>
         <div className={styles.toolbarActions}>
-          <button onClick={generate} disabled={generating} className={styles.toolbarBtn}>{generating ? "Regenerating..." : "Regenerate Full Report"}</button>
-          <button onClick={() => window.print()} className={styles.toolbarBtn}>↓ Download PDF</button>
+          <button onClick={() => window.print()} className={styles.toolbarBtn}>↓ Download Full Report</button>
+          <button onClick={printExecSummary} className={styles.toolbarBtn}>↓ Download Executive Summary</button>
           <button onClick={() => setShowExecutiveSummary(v => !v)} className={`${styles.toolbarBtnPrimary} ${showExecutiveSummary ? styles.toolbarBtnActive : ""}`}>Executive Summary</button>
         </div>
       </div>
@@ -457,7 +479,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
         {/* Main content */}
         <main className={styles.reportMain}>
           {showExecutiveSummary && (
-            <div className={styles.execPanel}>
+            <div className={styles.execPanel} id="exec-panel-print">
           <div className={styles.execPanelHeader}>
             <h3 className={styles.execPanelTitle}>Executive Summary</h3>
             <span className={styles.execPanelAudience}>For senior executives, decision makers, and governance bodies</span>
