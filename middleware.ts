@@ -19,6 +19,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Skip auth for localhost — only enforce on external/tunnel access
+  const host = request.headers.get("host") ?? "";
+  const isLocal = host.startsWith("localhost") || host.startsWith("127.0.0.1");
+  if (isLocal) {
+    return NextResponse.next();
+  }
+
   // Pass through Next.js internals without an auth round-trip
   const { pathname } = request.nextUrl;
   if (pathname.startsWith("/_next/")) {
