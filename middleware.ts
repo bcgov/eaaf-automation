@@ -1,0 +1,57 @@
+import { NextRequest, NextResponse } from "next/server";
+
+/**
+ * HTTP Basic Auth middleware.
+ *
+ * Activated only when AUTH_USERNAME and AUTH_PASSWORD are set in .env.local.
+ * Leave them unset for unrestricted local development.
+ *
+ * Add to .env.local:
+ *   AUTH_USERNAME=your-username
+ *   AUTH_PASSWORD=your-password
+ */
+export function middleware(request: NextRequest) {
+  const username = process.env.AUTH_USERNAME;
+  const password = process.env.AUTH_PASSWORD;
+
+  // Auth not configured — allow all requests (local dev default)
+  if (!username || !password) {
+    return NextResponse.next();
+  }
+
+  // Pass through Next.js internals without an auth round-trip
+  const { pathname } = request.nextUrl;
+  if (pathname.startsWith("/_next/")) {
+    return NextResponse.next();
+  }
+
+  const authHeader = request.headers.get("authorization") ?? "";
+
+  if (authHeader.startsWith("Basic ")) {
+    try {
+      const decoded = atob(authHeader.slice(6));
+      const colonIdx = decoded.indexOf(":");
+      if (colonIdx !== -1) {
+        const user = decoded.slice(0, colonIdx);
+        const pass = decoded.slice(colonIdx + 1);
+        if (user === username && pass === password) {
+          return NextResponse.next();
+        }
+      }
+    } catch {
+      // malformed base64 — fall through to 401
+    }
+  }
+
+  return new NextResponse("Unauthorized", {
+    status: 401,
+    headers: {
+      "WWW-Authenticate": 'Basic realm="EAAF Automation", charset="UTF-8"',
+    },
+  });
+}
+
+export const config = {
+  // Run on every route; the /_next/ check above handles static assets efficiently
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+};

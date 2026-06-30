@@ -345,3 +345,37 @@ The `.gitignore` blocks all of these automatically.
 2. Open the health dashboard at `http://localhost:3000/eaaf-automation/health` for live diagnostics
 3. Ask your team lead for seed data or environment-specific help
 4. Check GitHub Issues: https://github.com/ghsansin/eaaf-automation/issues
+
+
+# Cloudflare exposed URL for the application https://<random-subdomain>.trycloudflare.com/eaaf-automation 
+# Pre req Cloudflare (ONE TIME SETUP)
+
+
+### 1. Install cloudflared
+Download and install the MSI:
+https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+Run the installer and complete setup.
+
+---
+
+### 2. Verify installation
+Open PowerShell:
+```bash
+cloudflared --version
+```
+
+### 3. If cloudflared works in CMD but not in VSCode PowerShell, run
+```
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+
+```
+### 4. Run cloudflare tunnel
+cloudflared tunnel --url http://127.0.0.1:3000
+
+### 5. Cloud flare tunnel can be started with the command
+1. cloudflared tunnel --url http://127.0.0.1:3000
+2. Output will be like https://<random-subdomain>.trycloudflare.com 
+3. Add the random-subdomain to .local.env
+4. Application should be available at https://<random-subdomain>.trycloudflare.com/eaaf-automation 
+5. Basic authentication to protect the app when accessed through the Cloudflare tunnel .middleware.ts at the root of the project and check for the auth env vars and skip authentication if they're not set, so development on localhost works without credentials. When the vars are configured, it enforces HTTP Basic Auth and returns a 401 with the proper header if credentials are missing or incorrect. 
+6. Add AUTH_USERNAME=your-username AUTH_PASSWORD=your-password in your .local.env
