@@ -125,6 +125,24 @@ const initializeDatabase = () => {
       FOREIGN KEY (assessment_id) REFERENCES assessments(id)
     );
 
+    CREATE TABLE IF NOT EXISTS assessment_ai_cache (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      assessment_id INTEGER NOT NULL,
+      cache_type    TEXT    NOT NULL,
+      result_json   TEXT    NOT NULL,
+      created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(assessment_id, cache_type),
+      FOREIGN KEY (assessment_id) REFERENCES assessments(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS assessment_report_cache (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      assessment_id INTEGER NOT NULL UNIQUE,
+      report_json   TEXT    NOT NULL,
+      created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (assessment_id) REFERENCES assessments(id)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_factor_stepKey ON "Factor"(stepKey);
     CREATE INDEX IF NOT EXISTS idx_subfactor_factorId ON "SubFactor"(factorId);
     CREATE INDEX IF NOT EXISTS idx_questions_factorId ON questions(factorId);
@@ -238,6 +256,29 @@ const initializeDatabase = () => {
   if (!hasColumn("recommendations", "architect_approval_recorded_at")) {
     db.exec("ALTER TABLE recommendations ADD COLUMN architect_approval_recorded_at DATETIME");
   }
+
+  // Migrate full_report and assembled_document from assessment_ai_cache to assessment_report_cache.
+  // assessment_ai_cache should only hold AI scan results (jurisdiction_scan, innovative_solutions).
+  db.exec(`
+    INSERT OR IGNORE INTO assessment_report_cache (assessment_id, report_json, created_at)
+    SELECT assessment_id, result_json, created_at
+    FROM assessment_ai_cache
+    WHERE cache_type = 'full_report';
+
+    DELETE FROM assessment_ai_cache WHERE cache_type IN ('full_report', 'assembled_document');
+  `);
+
+  // Completion rule change: assessments are only 'completed' after architect approval.
+  // Reset any 'completed' assessment whose recommendation has no recorded architect decision.
+  db.exec(`
+    UPDATE assessments
+    SET status = 'in_progress', completed_at = NULL, updated_at = CURRENT_TIMESTAMP
+    WHERE status = 'completed'
+      AND id NOT IN (
+        SELECT assessment_id FROM recommendations
+        WHERE architect_approval IN ('agree', 'disagree')
+      )
+  `);
 
   // Normalize legacy step keys to new hierarchy step keys
   db.exec(`

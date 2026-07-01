@@ -25,7 +25,8 @@ const getResponses = db.prepare(
 );
 
 const getLatestRecommendation = db.prepare(
-  `SELECT platform_recommendation, rationale, confidence_score, risks, alternatives
+  `SELECT platform_recommendation, rationale, confidence_score, risks, alternatives,
+          architect_approval, architect_approval_reason, architect_approval_recorded_at
    FROM recommendations
    WHERE assessment_id = ?
    ORDER BY datetime(created_at) DESC, id DESC
@@ -52,6 +53,9 @@ const payload = assessments.map((a) => {
           confidenceScore: rec.confidence_score ?? null,
           risks: rec.risks || "",
           alternatives: rec.alternatives || "",
+          architectApproval: rec.architect_approval || null,
+          architectApprovalReason: rec.architect_approval_reason || null,
+          architectApprovalRecordedAt: rec.architect_approval_recorded_at || null,
         }
       : null,
   };

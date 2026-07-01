@@ -20,6 +20,9 @@ type HistoricalAssessment = {
     confidenceScore: number;
     risks: string;
     alternatives: string;
+    architectApproval?: string | null;
+    architectApprovalReason?: string | null;
+    architectApprovalRecordedAt?: string | null;
   } | null;
 };
 
@@ -98,8 +101,8 @@ const seedHistoricalAssessments = () => {
     // Insert recommendation
     if (seedData.recommendation) {
       db.prepare(`
-        INSERT INTO recommendations (assessment_id, platform_recommendation, rationale, confidence_score, risks, alternatives, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO recommendations (assessment_id, platform_recommendation, rationale, confidence_score, risks, alternatives, architect_approval, architect_approval_reason, architect_approval_recorded_at, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         assessmentId,
         seedData.recommendation.platformRecommendation,
@@ -107,6 +110,9 @@ const seedHistoricalAssessments = () => {
         seedData.recommendation.confidenceScore,
         seedData.recommendation.risks,
         seedData.recommendation.alternatives,
+        seedData.recommendation.architectApproval ?? null,
+        seedData.recommendation.architectApprovalReason ?? null,
+        seedData.recommendation.architectApprovalRecordedAt ?? null,
         now
       );
 

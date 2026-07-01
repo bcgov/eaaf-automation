@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import db from "@/lib/db/db";
 import { runInnovativeSolutions } from "@/lib/innovative/engine";
 import { isJurisdictionScanConfigured } from "@/lib/jurisdiction/config";
+import { saveAiCache } from "@/lib/db/aiCache";
+import { tunnelReadOnly } from "@/lib/access-control";
 
 export async function POST(
   req: Request,
@@ -9,6 +11,8 @@ export async function POST(
 ) {
   const { id } = await params;
   const assessmentId = parseInt(id);
+  const block = tunnelReadOnly(req, assessmentId);
+  if (block) return block;
 
   if (!isJurisdictionScanConfigured()) {
     return NextResponse.json(
@@ -65,6 +69,7 @@ export async function POST(
 
   try {
     const result = await runInnovativeSolutions(inputs);
+    saveAiCache(assessmentId, "innovative_solutions", result);
     return NextResponse.json(result);
   } catch (error) {
     console.error("[InnovativeSolutions Route] Error:", error);

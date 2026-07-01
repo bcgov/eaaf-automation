@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./InnovativeSolutions.module.css";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -16,7 +16,7 @@ interface InnovativeIdea {
   applicability: string;
 }
 
-interface InnovativeSolutionsResult {
+export interface InnovativeSolutionsResult {
   ideas: InnovativeIdea[];
   generatedAt: string;
   aiProvider: string;
@@ -30,14 +30,30 @@ export interface InnovativeSolutionsSummary {
 interface Props {
   assessmentId: number;
   onResult?: (summary: InnovativeSolutionsSummary) => void;
+  initialResult?: InnovativeSolutionsResult | null;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────
 
-export default function InnovativeSolutions({ assessmentId, onResult }: Props) {
-  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
-  const [result, setResult] = useState<InnovativeSolutionsResult | null>(null);
+export default function InnovativeSolutions({ assessmentId, onResult, initialResult }: Props) {
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
+    () => (initialResult ? "done" : "idle")
+  );
+  const [result, setResult] = useState<InnovativeSolutionsResult | null>(() => initialResult ?? null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Fire onResult once on mount if we were given cached data
+  useEffect(() => {
+    if (!initialResult || !onResult) return;
+    onResult({
+      topIdeas: initialResult.ideas.slice(0, 2).map(i => ({
+        ideaName: i.ideaName,
+        description: i.description,
+        whyRelevant: i.whyRelevant,
+      })),
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function generate() {
     setStatus("loading");

@@ -14,6 +14,9 @@ export interface ScoringHit {
   responseSnippet: string;
   keywordMatched: string;
   platformPoints: Partial<Record<Platform, number>>;
+  concept?: string;
+  description?: string;
+  ruleWhyItMatters?: string;
 }
 
 export interface RecommendationResult {
@@ -35,6 +38,9 @@ export interface RecommendationResult {
 interface Signal {
   keywords: string[];
   scores: Partial<Record<Platform, number>>;
+  concept?: string;
+  description?: string;
+  whyItMatters?: string;
 }
 
 const SCORING_RULES = EAAF_RULES.platformRules.scoringRules as Record<string, Signal[]>;
@@ -72,9 +78,8 @@ function scoreResponse(
       if (points > 0) {
         positivePoints[platform] = points;
         reasons[platform] = reasons[platform] ?? [];
-        reasons[platform].push(
-          `${questionKey} response signals "${rule.keywords[0]}" (${points > 0 ? "+" : ""}${points}pts)`
-        );
+        // Use the architectural concept name — never expose matched keywords in the rationale
+        reasons[platform].push(rule.concept ?? questionKey);
       }
     }
 
@@ -86,6 +91,9 @@ function scoreResponse(
         responseSnippet: responseText.substring(0, 120) + (responseText.length > 120 ? "..." : ""),
         keywordMatched: matchedKw,
         platformPoints: positivePoints,
+        concept: rule.concept,
+        description: rule.description,
+        ruleWhyItMatters: rule.whyItMatters,
       });
     }
   }
@@ -119,7 +127,8 @@ function buildRationale(
   reasons: Record<Platform, string[]>
 ): string {
   const answeredCount = Object.values(responses).filter((r) => r.trim().length > 0).length;
-  const topReasons = (reasons[winner] ?? []).slice(0, 3);
+  // Deduplicate concept names and take up to 3
+  const topConcepts = [...new Set(reasons[winner] ?? [])].slice(0, 3);
   const templates = EAAF_RULES.platformRules.rationaleTemplates;
 
   const parts: string[] = [
@@ -130,11 +139,8 @@ function buildRationale(
     }),
   ];
 
-  if (topReasons.length > 0) {
-    const signalSummary = topReasons
-      .map((r) => r.replace(/^[A-Z_\d]+ response signals /, "Assessment signal: ").replace(/\s*\([+-]\d+pts\)$/, ""))
-      .join("; ");
-    parts.push(formatRuleTemplate(templates.keyEvidencePrefix, { signalSummary }));
+  if (topConcepts.length > 0) {
+    parts.push(formatRuleTemplate(templates.keyEvidencePrefix, { signalSummary: topConcepts.join("; ") }));
   } else {
     parts.push(templates.noSignals);
   }
@@ -263,6 +269,6 @@ export function saveRecommendation(assessmentId: number, result: RecommendationR
   );
 
   db.prepare(`
-    UPDATE assessments SET status = 'completed', completed_at = ?, updated_at = ? WHERE id = ?
-  `).run(now, now, assessmentId);
+    UPDATE assessments SET updated_at = ? WHERE id = ?
+  `).run(now, assessmentId);
 }

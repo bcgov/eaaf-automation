@@ -55,10 +55,17 @@ export default function AssessmentPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [contextSaving, setContextSaving] = useState(false);
+  const [selectedQIdx, setSelectedQIdx] = useState(0);
+  const [qSearch, setQSearch] = useState("");
 
   useEffect(() => {
     loadData();
   }, [assessmentId]);
+
+  useEffect(() => {
+    setSelectedQIdx(0);
+    setQSearch("");
+  }, [questions]);
 
   const loadData = async () => {
     setLoading(true);
@@ -221,6 +228,22 @@ export default function AssessmentPage({ params }: { params: Promise<{ id: strin
   const hasPrevious = currentStepIndex > 0;
   const hasNext = !isLastStep;
 
+  const STEP_ICONS: Record<string, string> = {
+    ARCHITECTURE: "🏗",
+    CLOUD_ASSESSMENT: "☁",
+    PLATFORM_ASSESSMENT: "🗂",
+    OPERATIONAL_CONSIDERATIONS: "⚙",
+    FINAL_RECOMMENDATION: "📋",
+  };
+
+  const answeredCount = questions.filter(q => !!(responses[q.question_key] ?? "").trim()).length;
+  const filteredQuestions = qSearch.trim()
+    ? questions.filter(q =>
+        q.question_text.toLowerCase().includes(qSearch.toLowerCase())
+      )
+    : questions;
+  const selectedQ = questions[selectedQIdx] ?? questions[0] ?? null;
+
   return (
     <div className={styles.page}>
       {/* Top nav */}
@@ -273,43 +296,138 @@ export default function AssessmentPage({ params }: { params: Promise<{ id: strin
 
         {/* Current step questions */}
         <div className={styles.questionsSection}>
-          <h2 className={styles.stepHeading}>
-            {STEP_LABELS[currentStep]} — Step {currentStepIndex + 1} of {STEP_ORDER.length}
-          </h2>
-
           {isLastStep ? (
-            // Final step shows the recommendation engine
-            <RecommendationReport
-              assessmentId={assessmentId}
-              existingRecommendation={existingRecommendation}
-            />
+            <>
+              <h2 className={styles.stepHeading}>
+                {STEP_LABELS[currentStep]} — Step {currentStepIndex + 1} of {STEP_ORDER.length}
+              </h2>
+              <RecommendationReport
+                assessmentId={assessmentId}
+                existingRecommendation={existingRecommendation}
+              />
+            </>
           ) : (
-            // All other steps show questions
-            <div className={styles.questionsList}>
-                {questions.length === 0 ? (
-                  <p className={styles.noQuestions}>No questions found for this step.</p>
-                ) : (
-                  questions.map((q) => (
-                    <div key={q.id} className={styles.questionCard}>
-                      <label className={styles.questionLabel}>
-                        <span className={styles.questionKey}>{q.question_key}</span>
-                        {q.question_text}
-                      </label>
-                      {q.help_text && (
-                        <p className={styles.helpText}>{q.help_text}</p>
-                      )}
-                      <textarea
-                        className={styles.responseInput}
-                        value={responses[q.question_key] || ""}
-                        onChange={(e) => handleResponseChange(q.question_key, e.target.value)}
-                        onBlur={() => saveResponse(q.question_key)}
-                        rows={4}
-                        placeholder="Enter your response here…"
+            <>
+              {/* Panel header */}
+              <div className={styles.qPanelHeader}>
+                <div className={styles.qPanelHeaderLeft}>
+                  <span className={styles.qStepIcon}>{STEP_ICONS[currentStep]}</span>
+                  <h2 className={styles.stepHeading}>
+                    {STEP_LABELS[currentStep]} — Step {currentStepIndex + 1} of {STEP_ORDER.length}
+                  </h2>
+                </div>
+                <div className={styles.qPanelHeaderRight}>
+                  <span className={styles.answeredBadge}>
+                    ⏱ {answeredCount} of {questions.length} answered
+                  </span>
+                </div>
+              </div>
+
+              {questions.length === 0 ? (
+                <p className={styles.noQuestions}>No questions found for this step.</p>
+              ) : (
+                <div className={styles.qLayout}>
+                  {/* Left: question list */}
+                  <div className={styles.qListPanel}>
+                    <div className={styles.qSearchWrap}>
+                      <span className={styles.qSearchIcon}>🔍</span>
+                      <input
+                        className={styles.qSearchInput}
+                        placeholder="Search questions..."
+                        value={qSearch}
+                        onChange={e => setQSearch(e.target.value)}
                       />
                     </div>
-                  ))
-                )}
-              </div>
+                    <div className={styles.qListItems}>
+                      {filteredQuestions.map((q) => {
+                        const isAnswered = !!(responses[q.question_key] ?? "").trim();
+                        const isSelected = selectedQ?.id === q.id;
+                        return (
+                          <div
+                            key={q.id}
+                            className={`${styles.qListItem} ${isSelected ? styles.qListItemActive : ""}`}
+                            onClick={() => setSelectedQIdx(questions.indexOf(q))}
+                          >
+                            <div className={styles.qListItemInner}>
+                              <div>
+                                <div className={styles.qListItemText}>
+                                  {q.question_text.length > 60 ? q.question_text.slice(0, 60) + "…" : q.question_text}
+                                </div>
+                              </div>
+                              {isAnswered && <span className={styles.qListItemCheck}>✓</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Right: question detail */}
+                  <div className={styles.qDetailPanel}>
+                    {selectedQ && (
+                      <>
+                        <div className={styles.qDetailHeader}>
+                          <p className={styles.qDetailText}>{selectedQ.question_text}</p>
+                        </div>
+
+                        {selectedQ.help_text && (
+                          <div className={styles.qHelpBox}>
+                            <span className={styles.qHelpIcon}>ℹ</span>
+                            <span>{selectedQ.help_text}</span>
+                          </div>
+                        )}
+
+                        <div className={styles.qAnswerSection}>
+                          <div className={styles.qAnswerLabel}>Your Answer</div>
+                          <textarea
+                            className={styles.responseInput}
+                            value={responses[selectedQ.question_key] || ""}
+                            onChange={(e) => handleResponseChange(selectedQ.question_key, e.target.value)}
+                            onBlur={() => saveResponse(selectedQ.question_key)}
+                            rows={5}
+                            placeholder="Enter your response here…"
+                          />
+                          <div className={styles.qAnswerFooter}>
+                            <button className={styles.addNotesBtn}>✏ Add Notes</button>
+                            <div className={styles.qAnswerFooterRight}>
+                              {(responses[selectedQ.question_key] ?? "").trim() && (
+                                <span className={styles.savedBadge}>✓ Saved</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className={styles.qNav}>
+                          <button
+                            onClick={() => setSelectedQIdx(i => Math.max(0, i - 1))}
+                            disabled={selectedQIdx === 0}
+                            className={styles.qNavBtn}
+                          >
+                            ← Previous Question
+                          </button>
+                          <div className={styles.qNavCenter}>
+                            <div className={styles.qNavProgressWrap}>
+                              <div
+                                className={styles.qNavProgressBar}
+                                style={{ width: `${((selectedQIdx + 1) / questions.length) * 100}%` }}
+                              />
+                            </div>
+                            <span className={styles.qNavCounter}>Question {selectedQIdx + 1} of {questions.length}</span>
+                          </div>
+                          <button
+                            onClick={() => setSelectedQIdx(i => Math.min(questions.length - 1, i + 1))}
+                            disabled={selectedQIdx === questions.length - 1}
+                            className={`${styles.qNavBtn} ${styles.qNavNext}`}
+                          >
+                            Next Question →
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 

@@ -143,58 +143,43 @@ export default function BusinessContextPanel({
     );
   }
 
+  const contextFields = [
+    { key: "business_requirement" as const, label: "Requirement",     icon: "📋", color: "#1a73e8", bg: "#e8f0fe" },
+    { key: "business_context"    as const, label: "Context",          icon: "👥", color: "#137333", bg: "#e6f4ea" },
+    { key: "business_goals"      as const, label: "Strategic Goals",   icon: "🎯", color: "#7b2d8b", bg: "#f3e8fd" },
+    { key: "business_drivers"    as const, label: "Business Drivers",  icon: "📈", color: "#e37400", bg: "#fef3e2" },
+  ];
+
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
-        <h2>Business Context</h2>
+        <div className={styles.headerLeft}>
+          <span className={styles.headerIcon}>🏛</span>
+          <h2 className={styles.headerTitle}>Business Context</h2>
+        </div>
         <div className={styles.headerActions}>
-          <button
-            onClick={() => setIsEditing(true)}
-            className={styles.editButton}
-          >
-            Edit
+          <button onClick={() => setIsEditing(true)} className={styles.editButton}>
+            ✏ Edit
           </button>
-          <button
-            onClick={() => setIsExpanded(false)}
-            className={styles.collapseButton}
-          >
-            ▼
-          </button>
+          <button className={styles.moreButton} title="More options">⋮</button>
         </div>
       </div>
 
-      <div className={styles.content}>
-        {assessment.business_requirement && (
-          <div className={styles.field}>
-            <strong>Requirement:</strong>
-            <p>{assessment.business_requirement}</p>
+      <div className={styles.fieldRows}>
+        {contextFields.map((f) => (
+          <div key={f.key} className={styles.fieldRow}>
+            <div className={styles.fieldLabelCol}>
+              <span className={styles.fieldIconBadge} style={{ background: f.bg, color: f.color }}>{f.icon}</span>
+              <span className={styles.fieldLabel} style={{ color: f.color }}>{f.label}</span>
+            </div>
+            <div className={styles.fieldValue}>
+              {assessment[f.key]
+                ? <p>{assessment[f.key]}</p>
+                : <span className={styles.fieldEmpty}>Not specified</span>
+              }
+            </div>
           </div>
-        )}
-
-        {assessment.business_context && (
-          <div className={styles.field}>
-            <strong>Context:</strong>
-            <p>{assessment.business_context}</p>
-          </div>
-        )}
-
-        {assessment.business_goals && (
-          <div className={styles.field}>
-            <strong>Strategic Goals:</strong>
-            <p style={{ whiteSpace: "pre-wrap" }}>{assessment.business_goals}</p>
-          </div>
-        )}
-
-        {assessment.business_drivers && (
-          <div className={styles.field}>
-            <strong>Business Drivers:</strong>
-            <p style={{ whiteSpace: "pre-wrap" }}>{assessment.business_drivers}</p>
-          </div>
-        )}
-
-        {!assessment.business_requirement && (
-          <p className={styles.placeholder}>No business context defined yet. Click Edit to add details.</p>
-        )}
+        ))}
       </div>
     </div>
   );

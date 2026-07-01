@@ -12,6 +12,7 @@
     "db:seed:historical": "npx tsx scripts/seed-historical-assessments.ts",
     "export:assessments": "node scripts/export-historical-assessments.js",
     "export:historical": "node scripts/export-historical-assessments.js",
+    "preembeddings:service": "powershell -Command \"netstat -ano | Select-String ':8001\\s+\\S+\\s+LISTENING' | ForEach-Object { ($_ -split '\\s+')[-1] } | Where-Object { $_ -match '^\\d+$' } | Select-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue; Write-Host \\\"Stopped old embedding process (PID: $_)\\\" }\"",
     "embeddings:service": "local-embedding-service\\.venv\\Scripts\\python local-embedding-service/app.py",
     "embeddings:backfill": "node scripts/backfill-baseline-and-embeddings.js"
   },

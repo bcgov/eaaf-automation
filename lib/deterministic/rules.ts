@@ -4,7 +4,13 @@ export type Platform = "Salesforce" | "ServiceNow" | "MicrosoftPowerPlatform" | 
 
 export interface EaafRules {
   platformRules: {
-    scoringRules: Record<string, Array<{ keywords: string[]; scores: Partial<Record<Platform, number>> }>>;
+    scoringRules: Record<string, Array<{
+      keywords: string[];
+      scores: Partial<Record<Platform, number>>;
+      concept?: string;
+      description?: string;
+      whyItMatters?: string;
+    }>>;
     platformDisplay: Record<Platform, string>;
     platformStrengths: Record<Platform, string[]>;
     platformWeaknesses: Record<Platform, string[]>;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db/db";
 import { UpdateAssessmentRequest } from "@/types/assessment";
+import { tunnelReadOnly } from "@/lib/access-control";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -26,6 +27,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const assessmentId = parseInt(id);
+  const block = tunnelReadOnly(req, assessmentId);
+  if (block) return block;
   const body: UpdateAssessmentRequest = await req.json();
   const now = new Date().toISOString();
 
@@ -98,6 +101,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   if (Number.isNaN(assessmentId)) {
     return NextResponse.json({ error: "Invalid assessment id" }, { status: 400 });
   }
+
+  // Completed assessments are read-only through external/tunnel access
+  const block = tunnelReadOnly(req, assessmentId);
+  if (block) return block;
 
   const assessment = db
     .prepare(`SELECT id FROM assessments WHERE id = ?`)

@@ -7,100 +7,424 @@
     "scoringRules": {
       "_comment": "Section 3 – Each rule generates an Assessment Signal with Response Evidence, Interpretation, Why It Matters, and Platform Impact",
 
-      "Q001": [
-        { "keywords": ["capability", "reuse", "enterprise", "shared"], "scores": { "Salesforce": 3, "ServiceNow": 3, "MicrosoftPowerPlatform": 2 } }
-      ],
-      "Q002": [
-        { "keywords": ["shared service", "standard", "align"], "scores": { "Salesforce": 3, "ServiceNow": 3, "MicrosoftPowerPlatform": 2 } }
-      ],
       "Q009": [
-        { "keywords": ["incident manager", "change approver", "itsm role", "service desk role"], "scores": { "ServiceNow": 6 } },
-        { "keywords": ["enterprise sso", "mfa privileged", "privileged role"], "scores": { "ServiceNow": 3, "Salesforce": 2 } }
+        {
+          "concept": "ITSM Role Architecture",
+          "description": "The assessment identifies dedicated ITSM roles such as incident managers and change approvers.",
+          "whyItMatters": "Role-based ITSM functions require a platform with built-in role hierarchies, workflow governance, and structured access controls.",
+          "keywords": ["incident manager", "change approver", "itsm role", "service desk role"],
+          "scores": { "ServiceNow": 6 }
+        },
+        {
+          "concept": "Privileged Access Management",
+          "description": "The assessment requires enterprise SSO and privileged role access controls.",
+          "whyItMatters": "Enterprise IAM requirements favour platforms with native SSO, MFA, and RBAC integration to reduce identity risk.",
+          "keywords": ["enterprise sso", "mfa privileged", "privileged role"],
+          "scores": { "ServiceNow": 3, "Salesforce": 2 }
+        }
       ],
       "Q010": [
-        { "keywords": ["audit logging", "audit trail", "audit log"], "scores": { "ServiceNow": 5 } },
-        { "keywords": ["incident", "change approval", "approval workflow"], "scores": { "ServiceNow": 5 } },
-        { "keywords": ["siem", "security event management"], "scores": { "ServiceNow": 4, "CustomBuild": 2 } }
+        {
+          "concept": "Audit & Compliance Logging",
+          "description": "The assessment requires comprehensive audit logging of system and user actions.",
+          "whyItMatters": "Audit trail completeness is a compliance requirement and a key platform differentiator for regulated government environments.",
+          "keywords": ["audit logging", "audit trail", "audit log"],
+          "scores": { "ServiceNow": 5 }
+        },
+        {
+          "concept": "Change Management & Approval Workflow",
+          "description": "The assessment requires structured incident and change approval workflows.",
+          "whyItMatters": "Change management and approval routing are core ITSM capabilities that favour purpose-built enterprise service management platforms.",
+          "keywords": ["incident", "change approval", "approval workflow"],
+          "scores": { "ServiceNow": 5 }
+        },
+        {
+          "concept": "Security Event Management Integration",
+          "description": "The assessment requires integration with SIEM or security event management tools.",
+          "whyItMatters": "SIEM integration favours platforms with mature security tooling, API-based event ingestion, and alert-to-incident automation.",
+          "keywords": ["siem", "security event management"],
+          "scores": { "ServiceNow": 4, "CustomBuild": 2 }
+        }
       ],
       "CLOUD_SAAS_001": [
-        { "keywords": ["itsm", "it service management"], "scores": { "ServiceNow": 9, "Salesforce": -3 } },
-        { "keywords": ["incident management", "service desk", "service request management"], "scores": { "ServiceNow": 8 } },
-        { "keywords": ["crm", "customer relationship management"], "scores": { "Salesforce": 9, "ServiceNow": -3 } },
-        { "keywords": ["citizen", "public-facing portal", "citizen portal"], "scores": { "Salesforce": 7 } },
-        { "keywords": ["low-code", "citizen developer", "power platform"], "scores": { "MicrosoftPowerPlatform": 9 } }
+        {
+          "concept": "Enterprise IT Service Management",
+          "description": "The assessment requires comprehensive IT service management capabilities.",
+          "whyItMatters": "Enterprise ITSM platforms provide mature incident, request, problem, change and SLA management capabilities that are not replicated by CRM or low-code platforms.",
+          "keywords": ["itsm", "it service management"],
+          "scores": { "ServiceNow": 9, "Salesforce": -3 }
+        },
+        {
+          "concept": "IT Service Desk & Incident Management",
+          "description": "The assessment requires a service desk with incident and service request management.",
+          "whyItMatters": "Service desk and incident management are primary ITSM platform drivers, strongly favouring purpose-built solutions over general workflow tools.",
+          "keywords": ["incident management", "service desk", "service request management"],
+          "scores": { "ServiceNow": 8 }
+        },
+        {
+          "concept": "Customer Relationship Management",
+          "description": "The assessment requires customer relationship management capabilities.",
+          "whyItMatters": "CRM requirements strongly favour purpose-built CRM platforms. Deploying an ITSM platform for CRM needs creates unnecessary complexity and cost.",
+          "keywords": ["crm", "customer relationship management"],
+          "scores": { "Salesforce": 9, "ServiceNow": -3 }
+        },
+        {
+          "concept": "Citizen-Facing Portal Requirements",
+          "description": "The assessment requires a public-facing or citizen portal.",
+          "whyItMatters": "Citizen-facing services require platforms with strong portal capabilities, accessibility support, and scalable public-access licensing.",
+          "keywords": ["citizen", "public-facing portal", "citizen portal"],
+          "scores": { "Salesforce": 7 }
+        },
+        {
+          "concept": "Low-Code Platform Requirements",
+          "description": "The assessment requires low-code or citizen developer capabilities.",
+          "whyItMatters": "Low-code requirements favour platforms designed for business team delivery with minimal developer dependency, available under existing BC Government licensing.",
+          "keywords": ["low-code", "citizen developer", "power platform"],
+          "scores": { "MicrosoftPowerPlatform": 9 }
+        }
       ],
       "CLOUD_SAAS_002": [
-        { "keywords": ["workflow automation", "approval routing", "routing workflow"], "scores": { "ServiceNow": 5, "MicrosoftPowerPlatform": 3 } },
-        { "keywords": ["significant gaps", "complex customization required"], "scores": { "CustomBuild": 4 } },
-        { "keywords": ["minor customization", "no significant gaps", "out of the box", "95%"], "scores": { "ServiceNow": 5, "Salesforce": 4 } }
+        {
+          "concept": "Workflow Automation Requirements",
+          "description": "The assessment requires workflow automation and approval routing capabilities.",
+          "whyItMatters": "Workflow and approval routing depth is a key differentiator between enterprise platforms and lightweight tools such as simple form builders.",
+          "keywords": ["workflow automation", "approval routing", "routing workflow"],
+          "scores": { "ServiceNow": 5, "MicrosoftPowerPlatform": 3 }
+        },
+        {
+          "concept": "Complex Customization Requirement",
+          "description": "The assessment indicates significant gaps between requirements and out-of-the-box platform capabilities.",
+          "whyItMatters": "Significant customization requirements may favour a custom build or a highly extensible enterprise platform over a constrained SaaS product.",
+          "keywords": ["significant gaps", "complex customization required"],
+          "scores": { "CustomBuild": 4 }
+        },
+        {
+          "concept": "Out-of-the-Box Platform Fit",
+          "description": "The assessment indicates requirements are largely met out of the box by a commercial platform.",
+          "whyItMatters": "Strong out-of-the-box fit reduces implementation risk, lowers cost, and favours established SaaS platforms over custom development.",
+          "keywords": ["minor customization", "no significant gaps", "out of the box", "95%"],
+          "scores": { "ServiceNow": 5, "Salesforce": 4 }
+        }
       ],
       "CLOUD_CONSTRAINT_001": [
-        { "keywords": ["no blocking", "no constraints", "no significant constraints"], "scores": { "ServiceNow": 2, "Salesforce": 2, "MicrosoftPowerPlatform": 2 } },
-        { "keywords": ["data residency", "canadian data center", "canadian region", "data sovereignty"], "scores": { "ServiceNow": 3, "Salesforce": 2 } }
+        {
+          "concept": "Cloud Deployment Readiness",
+          "description": "The assessment indicates no blocking cloud deployment constraints.",
+          "whyItMatters": "Absence of cloud deployment blockers supports the viability of SaaS-hosted enterprise platforms and reduces procurement risk.",
+          "keywords": ["no blocking", "no constraints", "no significant constraints"],
+          "scores": { "ServiceNow": 2, "Salesforce": 2, "MicrosoftPowerPlatform": 2 }
+        },
+        {
+          "concept": "Data Residency & Sovereignty",
+          "description": "The assessment identifies data residency or Canadian data sovereignty requirements.",
+          "whyItMatters": "Data residency requirements favour platforms with confirmed Canadian or BC Government-approved data centre options to satisfy privacy obligations.",
+          "keywords": ["data residency", "canadian data center", "canadian region", "data sovereignty"],
+          "scores": { "ServiceNow": 3, "Salesforce": 2 }
+        }
       ],
       "CLOUD_BUILD_001": [
-        { "keywords": ["not justified", "not recommended", "saas preferred", "no custom build"], "scores": { "CustomBuild": -8 } },
-        { "keywords": ["custom build required", "bespoke required", "unique mandate", "no cots"], "scores": { "CustomBuild": 8 } },
-        { "keywords": ["industry-leading", "proven platform", "25 years", "enterprise platform maturity"], "scores": { "ServiceNow": 5, "Salesforce": 4 } }
+        {
+          "concept": "Custom Build Viability Assessment",
+          "description": "The assessment indicates custom build is not justified or recommended for this use case.",
+          "whyItMatters": "Evidence against custom build strongly supports SaaS platform selection, reduces delivery risk, and is consistent with BC Government digital procurement guidelines.",
+          "keywords": ["not justified", "not recommended", "saas preferred", "no custom build"],
+          "scores": { "CustomBuild": -8 }
+        },
+        {
+          "concept": "Bespoke Development Requirement",
+          "description": "The assessment identifies requirements that cannot be met by any existing commercial platform.",
+          "whyItMatters": "Unique mandate requirements that cannot be satisfied by COTS platforms may justify a custom build investment, subject to a full business case.",
+          "keywords": ["custom build required", "bespoke required", "unique mandate", "no cots"],
+          "scores": { "CustomBuild": 8 }
+        },
+        {
+          "concept": "Enterprise Platform Maturity",
+          "description": "The assessment values enterprise platform maturity and proven delivery track records.",
+          "whyItMatters": "Platform maturity and proven track record reduce delivery risk, support ARB governance approval, and signal long-term vendor sustainability.",
+          "keywords": ["industry-leading", "proven platform", "25 years", "enterprise platform maturity"],
+          "scores": { "ServiceNow": 5, "Salesforce": 4 }
+        }
       ],
       "CLOUD_BUILD_002": [
-        { "keywords": ["custom build not", "saas more cost", "ongoing maintenance burden"], "scores": { "CustomBuild": -5 } },
-        { "keywords": ["custom build preferred", "custom solution cost effective"], "scores": { "CustomBuild": 6 } },
-        { "keywords": ["implementation cost", "total cost"], "scores": { "ServiceNow": 3, "Salesforce": 2 } }
+        {
+          "concept": "Total Cost of Ownership Comparison",
+          "description": "The assessment indicates SaaS platforms are more cost-effective than custom development over the solution lifecycle.",
+          "whyItMatters": "TCO analysis favouring SaaS reduces the justification for custom build and supports platform procurement through existing enterprise agreements.",
+          "keywords": ["custom build not", "saas more cost", "ongoing maintenance burden"],
+          "scores": { "CustomBuild": -5 }
+        },
+        {
+          "concept": "Custom Build Cost Justification",
+          "description": "The assessment indicates custom development is the more cost-effective long-term option.",
+          "whyItMatters": "Where custom build is cost-justified, the business case must fully account for maintenance, security patching, and long-term capability requirements.",
+          "keywords": ["custom build preferred", "custom solution cost effective"],
+          "scores": { "CustomBuild": 6 }
+        },
+        {
+          "concept": "Platform Implementation Cost Analysis",
+          "description": "The assessment considers implementation and total cost of ownership in platform selection.",
+          "whyItMatters": "Implementation cost analysis is a key factor in BC Government platform procurement decisions and ARB business case requirements.",
+          "keywords": ["implementation cost", "total cost"],
+          "scores": { "ServiceNow": 3, "Salesforce": 2 }
+        }
       ],
       "PLAT_CRM_001": [
-        { "keywords": ["itsm", "it service management", "service desk ticketing", "incident"], "scores": { "ServiceNow": 8, "Salesforce": -4 } },
-        { "keywords": ["not crm", "not customer relationship", "no crm"], "scores": { "Salesforce": -6 } },
-        { "keywords": ["crm", "customer relationship management", "citizen-facing portal"], "scores": { "Salesforce": 9, "ServiceNow": -3 } },
-        { "keywords": ["case management", "citizen service delivery"], "scores": { "Salesforce": 6 } }
+        {
+          "concept": "ITSM vs CRM Platform Differentiation",
+          "description": "The assessment identifies ITSM capabilities as the primary requirement, distinguishing it from CRM needs.",
+          "whyItMatters": "ITSM-focused requirements indicate a ServiceNow-class platform rather than a CRM platform — conflating ITSM with CRM leads to poor platform fit.",
+          "keywords": ["itsm", "it service management", "service desk ticketing", "incident"],
+          "scores": { "ServiceNow": 8, "Salesforce": -4 }
+        },
+        {
+          "concept": "CRM Requirement Exclusion",
+          "description": "The assessment explicitly excludes CRM as a requirement.",
+          "whyItMatters": "Explicit CRM exclusion signals that a CRM-centric platform such as Salesforce is not the right architectural fit for this use case.",
+          "keywords": ["not crm", "not customer relationship", "no crm"],
+          "scores": { "Salesforce": -6 }
+        },
+        {
+          "concept": "Customer Relationship Management Platform Need",
+          "description": "The assessment requires customer relationship management or citizen-facing portal capabilities.",
+          "whyItMatters": "CRM and citizen portal requirements are a primary driver for Salesforce platform selection in BC Government service delivery contexts.",
+          "keywords": ["crm", "customer relationship management", "citizen-facing portal"],
+          "scores": { "Salesforce": 9, "ServiceNow": -3 }
+        },
+        {
+          "concept": "Case Management for Citizen Services",
+          "description": "The assessment requires case management capabilities for citizen service delivery.",
+          "whyItMatters": "Case management for citizen services is a key Salesforce Government Cloud use case with established BC Government precedent.",
+          "keywords": ["case management", "citizen service delivery"],
+          "scores": { "Salesforce": 6 }
+        }
       ],
       "PLAT_CRM_002": [
-        { "keywords": ["internal", "it operations", "staff-facing", "not external", "no external"], "scores": { "ServiceNow": 4, "MicrosoftPowerPlatform": 3, "Salesforce": -3 } },
-        { "keywords": ["citizen portal", "external portal", "public-facing", "citizen-facing"], "scores": { "Salesforce": 7 } },
-        { "keywords": ["knowledge base", "staff troubleshooting", "self-service for staff"], "scores": { "ServiceNow": 5 } }
+        {
+          "concept": "Internal Staff-Facing Solution",
+          "description": "The assessment identifies this as an internal or staff-facing solution rather than a citizen-facing service.",
+          "whyItMatters": "Internal staff-facing solutions favour ITSM or Power Platform over citizen-oriented CRM platforms, reducing unnecessary licensing cost.",
+          "keywords": ["internal", "it operations", "staff-facing", "not external", "no external"],
+          "scores": { "ServiceNow": 4, "MicrosoftPowerPlatform": 3, "Salesforce": -3 }
+        },
+        {
+          "concept": "External Citizen Portal",
+          "description": "The assessment requires an externally accessible citizen portal.",
+          "whyItMatters": "External citizen-facing portals require platforms designed for public-scale access, accessibility compliance, and session management.",
+          "keywords": ["citizen portal", "external portal", "public-facing", "citizen-facing"],
+          "scores": { "Salesforce": 7 }
+        },
+        {
+          "concept": "Staff Self-Service Knowledge Base",
+          "description": "The assessment requires a staff-facing knowledge base or self-service portal.",
+          "whyItMatters": "Staff self-service and knowledge management capabilities are a core strength of enterprise ITSM platforms, reducing frontline service desk demand.",
+          "keywords": ["knowledge base", "staff troubleshooting", "self-service for staff"],
+          "scores": { "ServiceNow": 5 }
+        }
       ],
       "PLAT_WORKFLOW_001": [
-        { "keywords": ["incident routing", "complex incident routing", "multi-step incident"], "scores": { "ServiceNow": 9 } },
-        { "keywords": ["complex workflow", "multi-step approval", "workflow automation", "sla enforcement"], "scores": { "ServiceNow": 7, "MicrosoftPowerPlatform": 2 } },
-        { "keywords": ["sla", "service level agreement"], "scores": { "ServiceNow": 6 } },
-        { "keywords": ["simple form", "simple workflow", "basic approval", "lightweight process"], "scores": { "MicrosoftPowerPlatform": 8 } }
+        {
+          "concept": "Complex Incident Routing",
+          "description": "The assessment requires complex incident routing with multi-step triage and escalation logic.",
+          "whyItMatters": "Complex incident routing and escalation requires a mature ITSM workflow engine — this cannot be adequately served by lightweight workflow tools.",
+          "keywords": ["incident routing", "complex incident routing", "multi-step incident"],
+          "scores": { "ServiceNow": 9 }
+        },
+        {
+          "concept": "Enterprise Workflow Automation & SLA",
+          "description": "The assessment requires enterprise-grade workflow automation with SLA enforcement.",
+          "whyItMatters": "Multi-step approval workflows and SLA enforcement are a primary architectural differentiator for ServiceNow over general-purpose workflow platforms.",
+          "keywords": ["complex workflow", "multi-step approval", "workflow automation", "sla enforcement"],
+          "scores": { "ServiceNow": 7, "MicrosoftPowerPlatform": 2 }
+        },
+        {
+          "concept": "Service Level Agreement Requirements",
+          "description": "The assessment requires SLA management and enforcement capabilities.",
+          "whyItMatters": "SLA management is a core ITSM capability that strongly favours purpose-built service management platforms with built-in breach alerting.",
+          "keywords": ["sla", "service level agreement"],
+          "scores": { "ServiceNow": 6 }
+        },
+        {
+          "concept": "Lightweight Workflow Requirements",
+          "description": "The assessment requires only simple forms, basic approvals, or lightweight process automation.",
+          "whyItMatters": "Lightweight workflow needs favour low-code platforms such as Microsoft Power Platform, avoiding over-engineering with enterprise ITSM solutions.",
+          "keywords": ["simple form", "simple workflow", "basic approval", "lightweight process"],
+          "scores": { "MicrosoftPowerPlatform": 8 }
+        }
       ],
       "PLAT_LOWCODE_001": [
-        { "keywords": ["low-code primary", "citizen developer", "business team agility primary"], "scores": { "MicrosoftPowerPlatform": 9 } },
-        { "keywords": ["low-code secondary", "not the primary driver", "secondary consideration"], "scores": { "ServiceNow": 4, "Salesforce": 3 } },
-        { "keywords": ["robust itsm", "operational capabilities", "itsm operational", "itsm focus"], "scores": { "ServiceNow": 7 } }
+        {
+          "concept": "Low-Code Primary Development Strategy",
+          "description": "The assessment identifies low-code or citizen developer capabilities as the primary platform driver.",
+          "whyItMatters": "When low-code enablement is the primary driver, Microsoft Power Platform provides the best fit under existing BC Government M365 licensing with minimal incremental cost.",
+          "keywords": ["low-code primary", "citizen developer", "business team agility primary"],
+          "scores": { "MicrosoftPowerPlatform": 9 }
+        },
+        {
+          "concept": "Low-Code as Secondary Capability",
+          "description": "The assessment notes low-code capability as secondary to other platform requirements.",
+          "whyItMatters": "Enterprise platforms offer low-code capabilities but these should not be the primary selection factor when ITSM or CRM requirements dominate the use case.",
+          "keywords": ["low-code secondary", "not the primary driver", "secondary consideration"],
+          "scores": { "ServiceNow": 4, "Salesforce": 3 }
+        },
+        {
+          "concept": "ITSM-Focused Operational Requirements",
+          "description": "The assessment identifies robust ITSM and operational management as the primary platform focus.",
+          "whyItMatters": "ITSM-focused operational requirements favour ServiceNow as the BC Government standard ITSM platform with established enterprise licensing.",
+          "keywords": ["robust itsm", "operational capabilities", "itsm operational", "itsm focus"],
+          "scores": { "ServiceNow": 7 }
+        }
       ],
       "PLAT_INT_001": [
-        { "keywords": ["cmdb", "configuration management database", "asset integration"], "scores": { "ServiceNow": 7 } },
-        { "keywords": ["monitoring tools", "prometheus", "nagios", "alert-to-incident"], "scores": { "ServiceNow": 6 } },
-        { "keywords": ["many integrations", "complex integration", "multiple system integration"], "scores": { "ServiceNow": 5, "CustomBuild": 3 } },
-        { "keywords": ["minimal integration", "single system", "low integration complexity"], "scores": { "MicrosoftPowerPlatform": 6 } }
+        {
+          "concept": "CMDB & Asset Integration",
+          "description": "The assessment requires integration with a configuration management database or asset registry.",
+          "whyItMatters": "CMDB integration is a native ServiceNow capability and a strong architectural signal for ITSM platform selection over generic workflow tools.",
+          "keywords": ["cmdb", "configuration management database", "asset integration"],
+          "scores": { "ServiceNow": 7 }
+        },
+        {
+          "concept": "Monitoring & Alert-to-Incident Integration",
+          "description": "The assessment requires integration with monitoring tools for alert-to-incident automation.",
+          "whyItMatters": "Alert-to-incident automation requires a platform with event management and monitoring integration capabilities built into the ITSM core.",
+          "keywords": ["monitoring tools", "prometheus", "nagios", "alert-to-incident"],
+          "scores": { "ServiceNow": 6 }
+        },
+        {
+          "concept": "Complex Multi-System Integration",
+          "description": "The assessment requires integration with multiple systems at significant technical complexity.",
+          "whyItMatters": "Complex multi-system integration favours platforms with mature API management, middleware connectors, and pre-built enterprise integration patterns.",
+          "keywords": ["many integrations", "complex integration", "multiple system integration"],
+          "scores": { "ServiceNow": 5, "CustomBuild": 3 }
+        },
+        {
+          "concept": "Low-Complexity Integration Needs",
+          "description": "The assessment indicates minimal or single-system integration requirements.",
+          "whyItMatters": "Low integration complexity reduces the platform differentiation on integration depth and opens the field to lighter-weight solutions.",
+          "keywords": ["minimal integration", "single system", "low integration complexity"],
+          "scores": { "MicrosoftPowerPlatform": 6 }
+        }
       ],
       "PLAT_INT_002": [
-        { "keywords": ["high-volume", "thousands of incidents", "incidents daily", "5000", "2000"], "scores": { "ServiceNow": 8 } },
-        { "keywords": ["real-time", "sub-minute", "low latency processing"], "scores": { "ServiceNow": 6 } },
-        { "keywords": ["low volume", "batch", "small scale integration", "infrequent"], "scores": { "MicrosoftPowerPlatform": 6 } }
+        {
+          "concept": "High-Volume Transaction Processing",
+          "description": "The assessment requires processing thousands of incidents or requests daily.",
+          "whyItMatters": "High transaction volumes require platforms with proven enterprise throughput, performance scalability, and guaranteed SLA processing.",
+          "keywords": ["high-volume", "thousands of incidents", "incidents daily", "5000", "2000"],
+          "scores": { "ServiceNow": 8 }
+        },
+        {
+          "concept": "Real-Time Processing Requirements",
+          "description": "The assessment requires real-time or sub-minute processing latency.",
+          "whyItMatters": "Real-time processing requirements favour enterprise platforms with proven event-driven architecture and low-latency pipeline management.",
+          "keywords": ["real-time", "sub-minute", "low latency processing"],
+          "scores": { "ServiceNow": 6 }
+        },
+        {
+          "concept": "Low-Volume Batch Processing",
+          "description": "The assessment indicates low-volume or infrequent batch processing requirements.",
+          "whyItMatters": "Low-volume batch processing may be well-served by lighter-weight and lower-cost platform alternatives rather than enterprise ITSM solutions.",
+          "keywords": ["low volume", "batch", "small scale integration", "infrequent"],
+          "scores": { "MicrosoftPowerPlatform": 6 }
+        }
       ],
       "PLAT_ECO_001": [
-        { "keywords": ["itsm partner", "itsm implementation partner", "servicenow partner", "itsm governance tooling"], "scores": { "ServiceNow": 8 } },
-        { "keywords": ["m365", "microsoft 365", "sharepoint", "microsoft teams"], "scores": { "MicrosoftPowerPlatform": 8 } },
-        { "keywords": ["appexchange", "salesforce ecosystem", "salesforce partner"], "scores": { "Salesforce": 8 } },
-        { "keywords": ["ecosystem depth", "mature governance tooling", "certified partners"], "scores": { "ServiceNow": 4, "Salesforce": 3 } }
+        {
+          "concept": "ITSM Partner Ecosystem Depth",
+          "description": "The assessment identifies access to the ITSM partner ecosystem and governance tooling as a key requirement.",
+          "whyItMatters": "ITSM partner depth and governance tooling availability reduce implementation risk and support long-term platform success in BC Government.",
+          "keywords": ["itsm partner", "itsm implementation partner", "servicenow partner", "itsm governance tooling"],
+          "scores": { "ServiceNow": 8 }
+        },
+        {
+          "concept": "Microsoft 365 Ecosystem Alignment",
+          "description": "The assessment identifies an existing M365 investment and Teams or SharePoint dependency.",
+          "whyItMatters": "M365 ecosystem alignment is a key strategic driver for Microsoft Power Platform adoption under existing BC Government licensing at minimal incremental cost.",
+          "keywords": ["m365", "microsoft 365", "sharepoint", "microsoft teams"],
+          "scores": { "MicrosoftPowerPlatform": 8 }
+        },
+        {
+          "concept": "Salesforce AppExchange Ecosystem",
+          "description": "The assessment requires access to the Salesforce AppExchange or partner network.",
+          "whyItMatters": "Salesforce ecosystem depth through AppExchange reduces custom build effort, accelerates solution delivery, and supports long-term platform evolution.",
+          "keywords": ["appexchange", "salesforce ecosystem", "salesforce partner"],
+          "scores": { "Salesforce": 8 }
+        },
+        {
+          "concept": "Enterprise Partner & Governance Tooling Depth",
+          "description": "The assessment values ecosystem depth, certified implementation partners, and mature governance tooling.",
+          "whyItMatters": "Partner and governance ecosystem depth reduces delivery risk and supports ARB-approved implementation patterns aligned with BC Government standards.",
+          "keywords": ["ecosystem depth", "mature governance tooling", "certified partners"],
+          "scores": { "ServiceNow": 4, "Salesforce": 3 }
+        }
       ],
       "OPS_SUP_001": [
-        { "keywords": ["itsm capability", "servicenow capability", "itsm expertise", "itsm team"], "scores": { "ServiceNow": 7 } },
-        { "keywords": ["crm expertise", "salesforce expertise", "salesforce capability"], "scores": { "Salesforce": 6 } },
-        { "keywords": ["power platform", "power apps", "power automate"], "scores": { "MicrosoftPowerPlatform": 6 } },
-        { "keywords": ["existing expertise", "existing capability", "in-house skills"], "scores": { "ServiceNow": 3 } }
+        {
+          "concept": "In-House ITSM Capability",
+          "description": "The assessment identifies existing ITSM expertise and ServiceNow capability within the organisation.",
+          "whyItMatters": "Existing ITSM expertise reduces the capability gap, lowers implementation risk, and supports long-term platform ownership for ServiceNow deployments.",
+          "keywords": ["itsm capability", "servicenow capability", "itsm expertise", "itsm team"],
+          "scores": { "ServiceNow": 7 }
+        },
+        {
+          "concept": "CRM Platform Expertise",
+          "description": "The assessment identifies existing CRM or Salesforce expertise within the organisation.",
+          "whyItMatters": "Existing CRM expertise reduces the capability gap, accelerates Salesforce implementation delivery, and supports sustainable platform operations.",
+          "keywords": ["crm expertise", "salesforce expertise", "salesforce capability"],
+          "scores": { "Salesforce": 6 }
+        },
+        {
+          "concept": "Microsoft Power Platform Expertise",
+          "description": "The assessment identifies existing Microsoft Power Platform skills within the organisation.",
+          "whyItMatters": "Existing Power Platform skills reduce delivery risk, enable rapid low-code solution development, and leverage the existing M365 investment.",
+          "keywords": ["power platform", "power apps", "power automate"],
+          "scores": { "MicrosoftPowerPlatform": 6 }
+        },
+        {
+          "concept": "Existing In-House Platform Skills",
+          "description": "The assessment identifies existing in-house platform skills relevant to the recommended solution.",
+          "whyItMatters": "In-house platform skills reduce the capability gap, lower implementation cost, and support long-term platform ownership without external dependency.",
+          "keywords": ["existing expertise", "existing capability", "in-house skills"],
+          "scores": { "ServiceNow": 3 }
+        }
       ],
       "OPS_SUP_002": [
-        { "keywords": ["managed services", "partner support", "third-party support"], "scores": { "ServiceNow": 4, "Salesforce": 3 } },
-        { "keywords": ["in-house support", "internal team", "self-supported"], "scores": { "MicrosoftPowerPlatform": 5, "ServiceNow": 2 } }
+        {
+          "concept": "Managed Services & Partner Support Model",
+          "description": "The assessment relies on managed services or third-party support for platform operations.",
+          "whyItMatters": "Managed service and partner support models are well-established for enterprise SaaS platforms, reducing in-house operational burden and ensuring platform continuity.",
+          "keywords": ["managed services", "partner support", "third-party support"],
+          "scores": { "ServiceNow": 4, "Salesforce": 3 }
+        },
+        {
+          "concept": "Internal Support & Self-Managed Operations",
+          "description": "The assessment relies on an internal team for platform support and operations.",
+          "whyItMatters": "Self-supported operations favour platforms with strong in-house tooling, lower operational complexity, and well-documented BC Government support patterns.",
+          "keywords": ["in-house support", "internal team", "self-supported"],
+          "scores": { "MicrosoftPowerPlatform": 5, "ServiceNow": 2 }
+        }
       ],
       "OPS_RISK_001": [
-        { "keywords": ["soc 2", "sox", "compliance framework", "audit compliance"], "scores": { "ServiceNow": 5, "Salesforce": 4 } },
-        { "keywords": ["audit trail", "audit log", "change audit"], "scores": { "ServiceNow": 6 } },
-        { "keywords": ["custom development risk", "build risk"], "scores": { "CustomBuild": -4 } }
+        {
+          "concept": "Regulatory Compliance Requirements",
+          "description": "The assessment requires compliance with formal regulatory frameworks such as SOC 2, SOX, or government audit standards.",
+          "whyItMatters": "Regulatory compliance requirements favour platforms with certified compliance postures, built-in audit controls, and established BC Government security clearances.",
+          "keywords": ["soc 2", "sox", "compliance framework", "audit compliance"],
+          "scores": { "ServiceNow": 5, "Salesforce": 4 }
+        },
+        {
+          "concept": "Audit Trail & Change Governance",
+          "description": "The assessment requires comprehensive audit trail and change governance capabilities.",
+          "whyItMatters": "Audit trail completeness is a governance requirement that differentiates enterprise platforms from lightweight tools in regulated government environments.",
+          "keywords": ["audit trail", "audit log", "change audit"],
+          "scores": { "ServiceNow": 6 }
+        },
+        {
+          "concept": "Custom Development Risk Profile",
+          "description": "The assessment identifies build risk or custom development risk as a key concern.",
+          "whyItMatters": "Custom development risk is a strong signal that a proven SaaS platform is preferred — custom build introduces delivery, security, and maintenance risk.",
+          "keywords": ["custom development risk", "build risk"],
+          "scores": { "CustomBuild": -4 }
+        }
       ]
     },
 

@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db/db";
 import { goToPreviousStep, type StepKey } from "@/lib/workflow/step-navigation";
+import { tunnelReadOnly } from "@/lib/access-control";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const assessmentId = parseInt(id);
+  const block = tunnelReadOnly(req, assessmentId);
+  if (block) return block;
 
   const assessment = db
     .prepare(`SELECT id, current_step_id FROM assessments WHERE id = ?`)
