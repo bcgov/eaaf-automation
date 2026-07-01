@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db/db";
+import { tunnelReadOnly } from "@/lib/access-control";
 
 interface SaveResponseBody {
   assessmentId: number;
@@ -14,6 +15,9 @@ export async function POST(req: NextRequest) {
   if (!assessmentId || !questionKey || value === undefined) {
     return NextResponse.json({ error: "assessmentId, questionKey, and value are required" }, { status: 400 });
   }
+
+  const block = tunnelReadOnly(req, assessmentId);
+  if (block) return block;
 
   const question = db.prepare(`
     SELECT id, step_id FROM questions WHERE question_key = ?

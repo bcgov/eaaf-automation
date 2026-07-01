@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
  *   AUTH_USERNAME=your-username
  *   AUTH_PASSWORD=your-password
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const username = process.env.AUTH_USERNAME;
   const password = process.env.AUTH_PASSWORD;
 
@@ -23,12 +23,6 @@ export function middleware(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const isLocal = host.startsWith("localhost") || host.startsWith("127.0.0.1");
   if (isLocal) {
-    return NextResponse.next();
-  }
-
-  // Pass through Next.js internals without an auth round-trip
-  const { pathname } = request.nextUrl;
-  if (pathname.startsWith("/_next/")) {
     return NextResponse.next();
   }
 
@@ -59,6 +53,6 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Run on every route; the /_next/ check above handles static assets efficiently
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Exclude all Next.js internals (static assets, images, HMR WebSocket, etc.)
+  matcher: ["/((?!_next/|favicon.ico).*)"],
 };

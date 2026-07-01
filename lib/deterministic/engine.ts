@@ -269,6 +269,6 @@ export function saveRecommendation(assessmentId: number, result: RecommendationR
   );
 
   db.prepare(`
-    UPDATE assessments SET status = 'completed', completed_at = ?, updated_at = ? WHERE id = ?
-  `).run(now, now, assessmentId);
+    UPDATE assessments SET updated_at = ? WHERE id = ?
+  `).run(now, assessmentId);
 }

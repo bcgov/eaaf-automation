@@ -184,6 +184,17 @@ if (-not $SkipEmbeddings) {
     Write-Host "`n[7/7] Starting local embedding service..." -ForegroundColor Yellow
 
     if ($hasPython -and $venvPython -and (Test-Path $venvPython)) {
+
+        # Kill any existing processes holding port 8001 before starting a new one
+        $portPids = (netstat -ano | Select-String ":8001\s+\S+\s+LISTENING") |
+            ForEach-Object { ($_ -split '\s+')[-1] } | Select-Object -Unique
+        foreach ($pid in $portPids) {
+            if ($pid -match '^\d+$') {
+                Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+                Write-Host "  Stopped old embedding service process (PID: $pid)" -ForegroundColor Gray
+            }
+        }
+
         Write-Host "  Starting embedding service on http://127.0.0.1:8001" -ForegroundColor Cyan
 
         $embeddingProcess = Start-Process -FilePath $venvPython `

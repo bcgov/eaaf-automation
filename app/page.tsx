@@ -9,6 +9,11 @@ import styles from "./page.module.css";
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const PAGE_SIZE = 6;
 
+// True when accessed through an external tunnel (not localhost)
+const isTunnelAccess = typeof window !== "undefined"
+  ? !window.location.hostname.startsWith("localhost") && !window.location.hostname.startsWith("127.")
+  : false;
+
 const STEP_DISPLAY: Record<string, string> = {
   ARCHITECTURE: "Architecture",
   CLOUD_ASSESSMENT: "Cloud",
@@ -323,14 +328,16 @@ export default function HomePage() {
 
                       <div className={styles.cardActions}>
                         <button className={styles.cardIconBtn} title="View trends">📈</button>
-                        <button
-                          className={styles.cardMenuBtn}
-                          title="Delete assessment"
-                          onClick={() => handleDeleteAssessment(a)}
-                          disabled={deletingId === a.id}
-                        >
-                          {deletingId === a.id ? "⏳" : "⋮"}
-                        </button>
+                        {!(isTunnelAccess && a.status === "completed") && (
+                          <button
+                            className={styles.cardMenuBtn}
+                            title="Delete assessment"
+                            onClick={() => handleDeleteAssessment(a)}
+                            disabled={deletingId === a.id}
+                          >
+                            {deletingId === a.id ? "⏳" : "⋮"}
+                          </button>
+                        )}
                       </div>
                     </article>
                   ))}

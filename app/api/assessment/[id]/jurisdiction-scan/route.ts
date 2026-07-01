@@ -3,6 +3,7 @@ import db from "@/lib/db/db";
 import { runJurisdictionScan } from "@/lib/jurisdiction/engine";
 import { isJurisdictionScanConfigured } from "@/lib/jurisdiction/config";
 import { saveAiCache } from "@/lib/db/aiCache";
+import { tunnelReadOnly } from "@/lib/access-control";
 
 export async function POST(
   req: Request,
@@ -10,6 +11,8 @@ export async function POST(
 ) {
   const { id } = await params;
   const assessmentId = parseInt(id);
+  const block = tunnelReadOnly(req, assessmentId);
+  if (block) return block;
 
   if (!isJurisdictionScanConfigured()) {
     return NextResponse.json(

@@ -150,6 +150,9 @@ taskkill /F /IM python.exe
 # Then restart
 npm run embeddings:service
 ```
+#setupp-dev.ps1 runs as a background process with no visible out put. To explcitty see the output run this 
+```
+cd \eaaf-automation\local-embedding-service .\.venv\Scripts\python.exe app.py
 
 ---
 
@@ -369,13 +372,25 @@ cloudflared --version
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
 ```
-### 4. Run cloudflare tunnel
-cloudflared tunnel --url http://127.0.0.1:3000
 
-### 5. Cloud flare tunnel can be started with the command
-1. cloudflared tunnel --url http://127.0.0.1:3000
-2. Output will be like https://<random-subdomain>.trycloudflare.com 
+### 4. Cloud flare tunnelling
+1. To start the tunnel, run the command on powershell ``` cloudflared tunnel --url http://127.0.0.1:3000 ```
+2. Output will be like ```https://<random-subdomain>.trycloudflare.com ```
 3. Add the random-subdomain to .local.env
 4. Application should be available at https://<random-subdomain>.trycloudflare.com/eaaf-automation 
 5. Basic authentication to protect the app when accessed through the Cloudflare tunnel .middleware.ts at the root of the project and check for the auth env vars and skip authentication if they're not set, so development on localhost works without credentials. When the vars are configured, it enforces HTTP Basic Auth and returns a 401 with the proper header if credentials are missing or incorrect. 
-6. Add AUTH_USERNAME=your-username AUTH_PASSWORD=your-password in your .local.env
+6. Add ```AUTH_USERNAME=your-username AUTH_PASSWORD=your-password``` in your .local.env
+7. Protecting the completed assessments against modifications, Following line of code 
+```const block = tunnelReadOnly(req, assessmentId);if (block) return block;```
+has been added to following 
+
+PUT /api/assessment/[id]	Edit business context
+POST .../next	Advance step
+POST .../previous	Go back a step
+POST .../recommend	Generate/regenerate report
+POST .../approval	Architect approval
+POST .../jurisdiction-scan	Re-run AI scan
+POST .../innovative-solutions	Re-run AI innovations
+POST /api/response/save	Save any answer
+
+Delete those once the functionality is no longer required.
