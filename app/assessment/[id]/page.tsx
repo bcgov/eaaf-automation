@@ -69,6 +69,11 @@ export default function AssessmentPage({ params }: { params: Promise<{ id: strin
         fetch(`${BASE_PATH}/api/responses?assessmentId=${assessmentId}`),
       ]);
 
+      if (!assessmentRes.ok) {
+        setLoading(false);
+        return;
+      }
+
       const assessmentData = await assessmentRes.json();
       const stepsData = await stepsRes.json();
       const responsesData = await responsesRes.json();

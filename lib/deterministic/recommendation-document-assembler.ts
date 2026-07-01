@@ -1,5 +1,6 @@
 import { INSTITUTIONAL_KNOWLEDGE_PLATFORM_PROFILES } from "@/lib/deterministic/institutional-knowledge-low-signal-report";
 import { RecommendationResult } from "@/lib/deterministic/engine";
+import { EAAF_RULES, formatRuleTemplate } from "@/lib/deterministic/rules";
 
 export interface AssembledRecommendation {
   summary: string;
@@ -8,11 +9,6 @@ export interface AssembledRecommendation {
   disclaimer: string;
 }
 
-/**
- * Assemble a complete recommendation document using all assessment data.
- * Called at the final step after all findings are complete.
- * Deterministic-only implementation. No LLM inference occurs in this module.
- */
 export async function assembleRecommendationDocument(
   assessmentName: string,
   businessContext: string,
@@ -24,6 +20,8 @@ export async function assembleRecommendationDocument(
   recommendation: RecommendationResult,
   similarAssessments?: Array<{ name: string; similarity: number }>
 ): Promise<AssembledRecommendation> {
+  const t = EAAF_RULES.recommendationTemplate;
+
   const similarContext =
     similarAssessments && similarAssessments.length > 0
       ? similarAssessments.map((s) => `${s.name} (${Math.round(s.similarity)}% similar)`).join(", ")
@@ -31,13 +29,27 @@ export async function assembleRecommendationDocument(
 
   const platformProfile = INSTITUTIONAL_KNOWLEDGE_PLATFORM_PROFILES.find((p) => p.platform === recommendation.platform);
 
+  const summary = formatRuleTemplate(t.summary, {
+    assessmentName,
+    displayName: recommendation.displayName,
+    confidenceScore: recommendation.confidenceScore,
+    similarContextSuffix: similarContext ? ` Similar historical assessments: ${similarContext}.` : "",
+  });
+
+  const platformAnalysis = platformProfile
+    ? formatRuleTemplate(t.platformAnalysisWithBestFit, {
+        displayName: recommendation.displayName,
+        rationale: recommendation.rationale,
+        bestFitFor: platformProfile.bestFitFor,
+      })
+    : formatRuleTemplate(t.platformAnalysisFallback, {
+        rationale: recommendation.rationale,
+      });
+
   return {
-    summary: `This Enterprise Architecture Assessment evaluated ${assessmentName} against BC Government platform standards. The recommended platform is ${recommendation.displayName}, which aligns best with stated business requirements and organizational readiness. Confidence: ${recommendation.confidenceScore}%.${similarContext ? ` Similar historical assessments: ${similarContext}.` : ""}`,
-    platformAnalysis: platformProfile
-      ? `${recommendation.displayName} is recommended because: ${recommendation.rationale} Best fit for: ${platformProfile.bestFitFor}.`
-      : recommendation.rationale,
-    nextSteps: `Next Steps:\n• Complete business case development with Finance\n• Initiate vendor engagement and licensing negotiations\n• Begin detailed implementation planning with relevant teams`,
-    disclaimer:
-      "This assessment provides a governance-ready platform recommendation based on deterministic scoring rules, historical assessment comparison, and BC Government platform standards. All recommendations should be validated by the architecture team before procurement.",
+    summary,
+    platformAnalysis,
+    nextSteps: t.nextSteps,
+    disclaimer: t.disclaimer,
   };
 }

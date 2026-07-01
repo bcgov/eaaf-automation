@@ -1,5 +1,6 @@
 import db from "@/lib/db/db";
 import { generateRecommendation, Platform, PlatformScore } from "@/lib/deterministic/engine";
+import { EAAF_RULES, formatRuleTemplate } from "@/lib/deterministic/rules";
 import { generateEmbedding, generateEmbeddings, cosineSimilarity as embeddingCosineSimilarity } from "@/lib/similarity/embeddings";
 
 // Ordered list of platforms — consistent ordering is required for fallback vector maths
@@ -58,7 +59,7 @@ interface HistoricalComparison {
 // CIRCUIT_BREAKER_RESET_MS milliseconds before retrying. This prevents hammering a down
 // service with 8 failing calls per comparison pair, but also auto-resets so that when the
 // service comes back up the next Regenerate will use real semantic scores again.
-const CIRCUIT_BREAKER_RESET_MS = 60_000; // 60 seconds
+const CIRCUIT_BREAKER_RESET_MS = EAAF_RULES.similarity.circuitBreakerResetMs;
 let semanticServiceUnavailableUntil = 0;
 
 function isSemanticServiceCircuitOpen(): boolean {
@@ -121,56 +122,9 @@ interface CategoryDefinition {
   weight: number;
 }
 
-const STOP_WORDS = new Set([
-  "the", "and", "for", "with", "that", "this", "from", "into", "their", "there", "about", "have", "will", "were",
-  "been", "must", "need", "needs", "should", "could", "would", "also", "across", "under", "within", "while", "where",
-  "which", "when", "what", "than", "then", "into", "onto", "over", "only", "very", "much", "more", "less", "such",
-  "through", "across", "using", "used", "being", "based", "including", "includes", "include", "each", "many", "some",
-  "high", "low", "medium", "government", "bc", "platform", "assessment", "business", "requirement", "requirements",
-]);
+const STOP_WORDS = new Set(EAAF_RULES.similarity.stopWords);
 
-const CATEGORY_MODEL: CategoryDefinition[] = [
-  {
-    key: "architecturalCapabilities",
-    label: "Architectural capabilities",
-    weight: 15,
-  },
-  {
-    key: "businessAlignment",
-    label: "Business alignment",
-    weight: 20,
-  },
-  {
-    key: "operatingModel",
-    label: "Operating model",
-    weight: 15,
-  },
-  {
-    key: "workflowCharacteristics",
-    label: "Workflow characteristics",
-    weight: 15,
-  },
-  {
-    key: "integrationPatterns",
-    label: "Integration patterns",
-    weight: 12,
-  },
-  {
-    key: "securityRequirements",
-    label: "Security requirements",
-    weight: 10,
-  },
-  {
-    key: "governanceRequirements",
-    label: "Governance requirements",
-    weight: 8,
-  },
-  {
-    key: "platformSelectionFactors",
-    label: "Platform selection factors",
-    weight: 5,
-  },
-];
+const CATEGORY_MODEL: CategoryDefinition[] = EAAF_RULES.similarity.categoryModel;
 
 interface StoredEmbeddingPayload {
   version: 1;
@@ -193,7 +147,7 @@ function toVector(platformScores: PlatformScore[]): number[] {
 
 // ─── Signal threshold ────────────────────────────────────────────────────────
 
-const SIGNAL_THRESHOLD = 20;
+const SIGNAL_THRESHOLD = EAAF_RULES.similarity.signalThreshold;
 
 export function isSignalSufficient(assessmentId: number): boolean {
   const result = generateRecommendation(assessmentId);
@@ -269,12 +223,16 @@ async function computeSemanticCategorySimilarity(
     const currentContext = buildSemanticCategoryContext(category, currentAssessment, currentResponses);
     const historicalContext = buildSemanticCategoryContext(category, historicalAssessment, historicalResponses);
     const score = clampScore(Math.round(jaccardSimilarity(currentContext, historicalContext) * 100));
+    const serviceUnavailableNote = formatRuleTemplate(
+      EAAF_RULES.similarity.lexicalFallback.serviceUnavailableNote,
+      { category: category.label }
+    );
     const matchedRationale = score >= 70
-      ? [categoryMatchNarrative(category.label), `${category.label} was compared using lexical overlap because semantic embedding service was unavailable.`]
-      : [`${category.label} was compared using lexical overlap because semantic embedding service was unavailable.`];
+      ? [categoryMatchNarrative(category.label), serviceUnavailableNote]
+      : [serviceUnavailableNote];
     const differentiators = score < 85 ? [categoryDifferenceNarrative(category.label)] : [];
     const reductionDrivers = score < 85
-      ? [categoryReductionNarrative(category.label), "Fallback lexical comparison reduced precision versus semantic comparison."]
+      ? [categoryReductionNarrative(category.label), EAAF_RULES.similarity.lexicalFallback.precisionReductionNote]
       : ["Category score derived from lexical fallback while semantic service was unavailable."];
 
     return {
@@ -319,8 +277,8 @@ async function computeSemanticCategorySimilarity(
       score: null,
       status: "unavailable",
       matchedRationale: [],
-      differentiators: [`${category.label} semantic comparison unavailable`],
-      reductionDrivers: ["Category score omitted because semantic comparison data was unavailable."],
+      differentiators: [formatRuleTemplate(EAAF_RULES.similarity.lexicalFallback.unavailableDiffTemplate, { category: category.label })],
+      reductionDrivers: [EAAF_RULES.similarity.lexicalFallback.unavailableReductionTemplate],
     };
   }
 }
@@ -494,72 +452,27 @@ function humanPlatformName(platform: Platform | string): string {
 }
 
 function categoryMatchNarrative(category: string): string {
-  const map: Record<string, string> = {
-    "Architectural capabilities": "Both assessments require comparable enterprise architecture capability depth for the core use case.",
-    "Business alignment": "Both assessments align on context, requirements, and strategic drivers that shape platform suitability.",
-    "Operating model": "Both assessments assume a comparable operating model, delivery ownership pattern, and support structure.",
-    "Workflow characteristics": "Both assessments require similar workflow complexity, multi-step process orchestration, and control points.",
-    "Integration patterns": "Both assessments require comparable integration patterns across enterprise systems and shared platforms.",
-    "Security requirements": "Both assessments require similar security controls, auditability, and policy-aligned assurance levels.",
-    "Governance requirements": "Both assessments operate under similar governance, compliance, and architectural oversight expectations.",
-    "Platform selection factors": "Both assessments emphasize similar platform decision factors such as fit, maintainability, and delivery feasibility.",
-  };
+  const map = EAAF_RULES.similarity.narratives.categoryMatch;
   return map[category] ?? "Both assessments show substantive alignment in this decision category.";
 }
 
 function categoryDifferenceNarrative(category: string): string {
-  const map: Record<string, string> = {
-    "Architectural capabilities": "The historical and current assessments require different capability profiles, changing platform fit and delivery considerations.",
-    "Business alignment": "Context, requirements, and strategic drivers differ, reducing direct precedent transferability.",
-    "Operating model": "Delivery and support model assumptions differ, affecting operational viability of the same platform decision.",
-    "Workflow characteristics": "Workflow depth, orchestration complexity, or process structure differs in ways that affect platform suitability.",
-    "Integration patterns": "Integration scope and dependency profile differ, affecting architectural risk and implementation effort.",
-    "Security requirements": "Security and assurance expectations are not fully equivalent between the two assessments.",
-    "Governance requirements": "Governance and compliance posture differs, reducing direct applicability of the prior decision.",
-    "Platform selection factors": "Platform selection drivers are weighted differently in the current assessment compared with historical precedent.",
-  };
+  const map = EAAF_RULES.similarity.narratives.categoryDifference;
   return map[category] ?? "Material differences in this category reduce direct precedent applicability.";
 }
 
 function categoryReductionNarrative(category: string): string {
-  const map: Record<string, string> = {
-    "Architectural capabilities": "Capability fit diverged in this category, which reduced similarity confidence.",
-    "Business alignment": "Differences in context, requirements, and drivers reduced direct precedent relevance.",
-    "Operating model": "Operating model differences reduced practical transferability of the historical decision.",
-    "Workflow characteristics": "Workflow differences lowered confidence that the same platform choice is equally appropriate.",
-    "Integration patterns": "Integration pattern differences increased divergence from historical precedent.",
-    "Security requirements": "Security requirement variance reduced confidence in direct precedent reuse.",
-    "Governance requirements": "Governance and compliance variance reduced precedent applicability.",
-    "Platform selection factors": "Differences in platform decision priorities reduced score alignment.",
-  };
+  const map = EAAF_RULES.similarity.narratives.categoryReduction;
   return map[category] ?? "Differences in this category reduced the final similarity score.";
 }
 
 function categoryAlignmentEvidence(category: string): string {
-  const map: Record<string, string> = {
-    "Architectural capabilities": "Architectural capability expectations are aligned, with both assessments requiring comparable solution capabilities for their target operating outcomes.",
-    "Business alignment": "Business alignment is strong across context, requirements, and strategic drivers.",
-    "Operating model": "Operating model assumptions are aligned, including ownership boundaries and shared-service implications.",
-    "Workflow characteristics": "Workflow characteristics are aligned, including process orchestration complexity and approval flow expectations.",
-    "Integration patterns": "Integration intent is aligned, with both assessments expecting comparable enterprise integration dependencies.",
-    "Security requirements": "Security expectations are aligned, including identity, access, and auditability requirements.",
-    "Governance requirements": "Governance expectations are aligned, including policy conformance and compliance posture.",
-    "Platform selection factors": "Platform intent is aligned, with both assessments emphasizing similar decision priorities for platform fit.",
-  };
+  const map = EAAF_RULES.similarity.narratives.categoryAlignmentEvidence;
   return map[category] ?? `${category} remained materially aligned between the two assessments.`;
 }
 
 function categoryDivergenceEvidence(category: string): string {
-  const map: Record<string, string> = {
-    "Architectural capabilities": "Architectural capability needs diverge, indicating different solution fit expectations between the two assessments.",
-    "Business alignment": "Business alignment diverges across context, requirements, or strategic drivers.",
-    "Operating model": "Operating model assumptions diverge, indicating different support, ownership, or service delivery expectations.",
-    "Workflow characteristics": "Workflow requirements diverge, indicating different process complexity and approval path expectations.",
-    "Integration patterns": "Integration patterns diverge, indicating different dependency and interoperability expectations.",
-    "Security requirements": "Security expectations diverge, indicating different assurance, control, or risk posture requirements.",
-    "Governance requirements": "Governance requirements diverge, indicating different policy and compliance obligations.",
-    "Platform selection factors": "Platform decision priorities diverge, indicating different intent for platform suitability and adoption.",
-  };
+  const map = EAAF_RULES.similarity.narratives.categoryDivergenceEvidence;
   return map[category] ?? `${category} diverged materially between the two assessments.`;
 }
 

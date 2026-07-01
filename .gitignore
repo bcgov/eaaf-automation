@@ -72,3 +72,6 @@ data/app.db
 eaaf.db
 data/app.db-wal
 data/app.db-shm
+lib/db/app.db
+lib/db/app.db-wal
+lib/db/app.db-shm

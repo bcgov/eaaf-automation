@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateRecommendation, saveRecommendation } from "@/lib/deterministic/engine";
+import { generateRecommendation, saveRecommendation, RecommendationResult } from "@/lib/deterministic/engine";
 import { assembleRecommendationDocument } from "@/lib/deterministic/recommendation-document-assembler";
 import { generateStrategicPlatformFitData } from "@/lib/deterministic/static-strategic-platform-fit-data";
 import { findSimilarAssessments } from "@/lib/similarity/engine";
@@ -27,6 +27,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const assessmentId = parseInt(id);
 
+  try {
   const assessment = db
     .prepare(
       `SELECT id, name, status, current_step_id, business_context, business_goals, business_drivers, business_requirement, created_at FROM assessments WHERE id = ?`
@@ -47,9 +48,36 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
   }
 
+  // ── Pre-flight: verify assessment has data to score ──────────────────────
+  const responseCount = (
+    db.prepare(`SELECT COUNT(*) as count FROM responses WHERE assessment_id = ?`).get(assessmentId) as { count: number }
+  ).count;
+
+  const hasBusinessContext = !!(
+    assessment.business_context ||
+    assessment.business_goals ||
+    assessment.business_drivers ||
+    assessment.business_requirement
+  );
+
+  if (responseCount === 0 && !hasBusinessContext) {
+    return NextResponse.json(
+      { error: "No responses or business context found. Complete the assessment steps before generating a report." },
+      { status: 422 }
+    );
+  }
+
   // ── Deterministic scoring ────────────────────────────────────────────────
-  const result = generateRecommendation(assessmentId);
-  saveRecommendation(assessmentId, result);
+  // eslint-disable-next-line prefer-const
+  let result!: RecommendationResult;
+  try {
+    result = generateRecommendation(assessmentId);
+    saveRecommendation(assessmentId, result);
+  } catch (e) {
+    console.error(`[recommend] Scoring failed for assessment ${assessmentId}:`, e);
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: `Report generation failed: ${message}` }, { status: 500 });
+  }
 
   // ── Assessment journey: steps with factors, subfactors, questions, responses ──
   const stepsWithData = STEP_ORDER.filter((k) => k !== "FINAL_RECOMMENDATION").map((stepKey) => {
@@ -165,6 +193,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   return NextResponse.json({
     // Core recommendation
     ...result,
+    rulesApplied: result.rulesApplied,
+    scoreImpacts: result.rulesApplied,
     deterministicDecisionAuthority: "Deterministic Decision Engine",
     deterministicSuitabilityScore: result.confidenceScore,
     // Assessment context
@@ -231,6 +261,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     // Recommendation document
     assembledDocument,
   });
+  } catch (e) {
+    console.error(`[recommend] Unhandled error for assessment ${assessmentId}:`, e);
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: `Report generation failed: ${message}` }, { status: 500 });
+  }
 }
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -244,11 +279,25 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       FROM recommendations WHERE assessment_id = ?
     `
     )
-    .get(assessmentId);
+    .get(assessmentId) as (Record<string, unknown> & { created_at: string }) | undefined;
 
   if (!recommendation) {
     return NextResponse.json({ error: "No recommendation found" }, { status: 404 });
   }
 
-  return NextResponse.json(recommendation);
+  // Determine whether any scored responses have changed since this recommendation was generated.
+  // Only compare responses.updated_at — assessments.updated_at changes on every step navigation
+  // and would produce false positives.
+  const latestResponseUpdate = db
+    .prepare(
+      `SELECT MAX(updated_at) as latest FROM responses WHERE assessment_id = ?`
+    )
+    .get(assessmentId) as { latest: string | null };
+
+  const recTime = new Date(recommendation.created_at).getTime();
+  const responseTime = latestResponseUpdate.latest ? new Date(latestResponseUpdate.latest).getTime() : 0;
+  const responsesChangedSince = responseTime > recTime;
+
+  return NextResponse.json({ ...recommendation, responsesChangedSince });
 }
+

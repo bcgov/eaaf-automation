@@ -1,0 +1,511 @@
+{
+  "_comment": "EAAF RULES – Drives full assessment report. Maps to Sections: 3 (Signals), 4 (Platform Evaluation), 5 (Rules Engine), 6 (Similarity), 7 (Confidence), 8 (Final Recommendation)",
+
+  "platformRules": {
+    "_comment": "Sections 3 + 5: Generates Assessment Signals and deterministic scoring that leads to platform selection",
+
+    "scoringRules": {
+      "_comment": "Section 3 – Each rule generates an Assessment Signal with Response Evidence, Interpretation, Why It Matters, and Platform Impact",
+
+      "Q001": [
+        { "keywords": ["capability", "reuse", "enterprise", "shared"], "scores": { "Salesforce": 3, "ServiceNow": 3, "MicrosoftPowerPlatform": 2 } }
+      ],
+      "Q002": [
+        { "keywords": ["shared service", "standard", "align"], "scores": { "Salesforce": 3, "ServiceNow": 3, "MicrosoftPowerPlatform": 2 } }
+      ],
+      "Q009": [
+        { "keywords": ["incident manager", "change approver", "itsm role", "service desk role"], "scores": { "ServiceNow": 6 } },
+        { "keywords": ["enterprise sso", "mfa privileged", "privileged role"], "scores": { "ServiceNow": 3, "Salesforce": 2 } }
+      ],
+      "Q010": [
+        { "keywords": ["audit logging", "audit trail", "audit log"], "scores": { "ServiceNow": 5 } },
+        { "keywords": ["incident", "change approval", "approval workflow"], "scores": { "ServiceNow": 5 } },
+        { "keywords": ["siem", "security event management"], "scores": { "ServiceNow": 4, "CustomBuild": 2 } }
+      ],
+      "CLOUD_SAAS_001": [
+        { "keywords": ["itsm", "it service management"], "scores": { "ServiceNow": 9, "Salesforce": -3 } },
+        { "keywords": ["incident management", "service desk", "service request management"], "scores": { "ServiceNow": 8 } },
+        { "keywords": ["crm", "customer relationship management"], "scores": { "Salesforce": 9, "ServiceNow": -3 } },
+        { "keywords": ["citizen", "public-facing portal", "citizen portal"], "scores": { "Salesforce": 7 } },
+        { "keywords": ["low-code", "citizen developer", "power platform"], "scores": { "MicrosoftPowerPlatform": 9 } }
+      ],
+      "CLOUD_SAAS_002": [
+        { "keywords": ["workflow automation", "approval routing", "routing workflow"], "scores": { "ServiceNow": 5, "MicrosoftPowerPlatform": 3 } },
+        { "keywords": ["significant gaps", "complex customization required"], "scores": { "CustomBuild": 4 } },
+        { "keywords": ["minor customization", "no significant gaps", "out of the box", "95%"], "scores": { "ServiceNow": 5, "Salesforce": 4 } }
+      ],
+      "CLOUD_CONSTRAINT_001": [
+        { "keywords": ["no blocking", "no constraints", "no significant constraints"], "scores": { "ServiceNow": 2, "Salesforce": 2, "MicrosoftPowerPlatform": 2 } },
+        { "keywords": ["data residency", "canadian data center", "canadian region", "data sovereignty"], "scores": { "ServiceNow": 3, "Salesforce": 2 } }
+      ],
+      "CLOUD_BUILD_001": [
+        { "keywords": ["not justified", "not recommended", "saas preferred", "no custom build"], "scores": { "CustomBuild": -8 } },
+        { "keywords": ["custom build required", "bespoke required", "unique mandate", "no cots"], "scores": { "CustomBuild": 8 } },
+        { "keywords": ["industry-leading", "proven platform", "25 years", "enterprise platform maturity"], "scores": { "ServiceNow": 5, "Salesforce": 4 } }
+      ],
+      "CLOUD_BUILD_002": [
+        { "keywords": ["custom build not", "saas more cost", "ongoing maintenance burden"], "scores": { "CustomBuild": -5 } },
+        { "keywords": ["custom build preferred", "custom solution cost effective"], "scores": { "CustomBuild": 6 } },
+        { "keywords": ["implementation cost", "total cost"], "scores": { "ServiceNow": 3, "Salesforce": 2 } }
+      ],
+      "PLAT_CRM_001": [
+        { "keywords": ["itsm", "it service management", "service desk ticketing", "incident"], "scores": { "ServiceNow": 8, "Salesforce": -4 } },
+        { "keywords": ["not crm", "not customer relationship", "no crm"], "scores": { "Salesforce": -6 } },
+        { "keywords": ["crm", "customer relationship management", "citizen-facing portal"], "scores": { "Salesforce": 9, "ServiceNow": -3 } },
+        { "keywords": ["case management", "citizen service delivery"], "scores": { "Salesforce": 6 } }
+      ],
+      "PLAT_CRM_002": [
+        { "keywords": ["internal", "it operations", "staff-facing", "not external", "no external"], "scores": { "ServiceNow": 4, "MicrosoftPowerPlatform": 3, "Salesforce": -3 } },
+        { "keywords": ["citizen portal", "external portal", "public-facing", "citizen-facing"], "scores": { "Salesforce": 7 } },
+        { "keywords": ["knowledge base", "staff troubleshooting", "self-service for staff"], "scores": { "ServiceNow": 5 } }
+      ],
+      "PLAT_WORKFLOW_001": [
+        { "keywords": ["incident routing", "complex incident routing", "multi-step incident"], "scores": { "ServiceNow": 9 } },
+        { "keywords": ["complex workflow", "multi-step approval", "workflow automation", "sla enforcement"], "scores": { "ServiceNow": 7, "MicrosoftPowerPlatform": 2 } },
+        { "keywords": ["sla", "service level agreement"], "scores": { "ServiceNow": 6 } },
+        { "keywords": ["simple form", "simple workflow", "basic approval", "lightweight process"], "scores": { "MicrosoftPowerPlatform": 8 } }
+      ],
+      "PLAT_LOWCODE_001": [
+        { "keywords": ["low-code primary", "citizen developer", "business team agility primary"], "scores": { "MicrosoftPowerPlatform": 9 } },
+        { "keywords": ["low-code secondary", "not the primary driver", "secondary consideration"], "scores": { "ServiceNow": 4, "Salesforce": 3 } },
+        { "keywords": ["robust itsm", "operational capabilities", "itsm operational", "itsm focus"], "scores": { "ServiceNow": 7 } }
+      ],
+      "PLAT_INT_001": [
+        { "keywords": ["cmdb", "configuration management database", "asset integration"], "scores": { "ServiceNow": 7 } },
+        { "keywords": ["monitoring tools", "prometheus", "nagios", "alert-to-incident"], "scores": { "ServiceNow": 6 } },
+        { "keywords": ["many integrations", "complex integration", "multiple system integration"], "scores": { "ServiceNow": 5, "CustomBuild": 3 } },
+        { "keywords": ["minimal integration", "single system", "low integration complexity"], "scores": { "MicrosoftPowerPlatform": 6 } }
+      ],
+      "PLAT_INT_002": [
+        { "keywords": ["high-volume", "thousands of incidents", "incidents daily", "5000", "2000"], "scores": { "ServiceNow": 8 } },
+        { "keywords": ["real-time", "sub-minute", "low latency processing"], "scores": { "ServiceNow": 6 } },
+        { "keywords": ["low volume", "batch", "small scale integration", "infrequent"], "scores": { "MicrosoftPowerPlatform": 6 } }
+      ],
+      "PLAT_ECO_001": [
+        { "keywords": ["itsm partner", "itsm implementation partner", "servicenow partner", "itsm governance tooling"], "scores": { "ServiceNow": 8 } },
+        { "keywords": ["m365", "microsoft 365", "sharepoint", "microsoft teams"], "scores": { "MicrosoftPowerPlatform": 8 } },
+        { "keywords": ["appexchange", "salesforce ecosystem", "salesforce partner"], "scores": { "Salesforce": 8 } },
+        { "keywords": ["ecosystem depth", "mature governance tooling", "certified partners"], "scores": { "ServiceNow": 4, "Salesforce": 3 } }
+      ],
+      "OPS_SUP_001": [
+        { "keywords": ["itsm capability", "servicenow capability", "itsm expertise", "itsm team"], "scores": { "ServiceNow": 7 } },
+        { "keywords": ["crm expertise", "salesforce expertise", "salesforce capability"], "scores": { "Salesforce": 6 } },
+        { "keywords": ["power platform", "power apps", "power automate"], "scores": { "MicrosoftPowerPlatform": 6 } },
+        { "keywords": ["existing expertise", "existing capability", "in-house skills"], "scores": { "ServiceNow": 3 } }
+      ],
+      "OPS_SUP_002": [
+        { "keywords": ["managed services", "partner support", "third-party support"], "scores": { "ServiceNow": 4, "Salesforce": 3 } },
+        { "keywords": ["in-house support", "internal team", "self-supported"], "scores": { "MicrosoftPowerPlatform": 5, "ServiceNow": 2 } }
+      ],
+      "OPS_RISK_001": [
+        { "keywords": ["soc 2", "sox", "compliance framework", "audit compliance"], "scores": { "ServiceNow": 5, "Salesforce": 4 } },
+        { "keywords": ["audit trail", "audit log", "change audit"], "scores": { "ServiceNow": 6 } },
+        { "keywords": ["custom development risk", "build risk"], "scores": { "CustomBuild": -4 } }
+      ]
+    },
+
+    "_comment_platform_eval": "Section 4 – Platform Evaluation (Strengths / Weaknesses / Risks / Alternatives)",
+
+    "platformDisplay": {
+      "Salesforce": "Salesforce (CRM + Case Management)",
+      "ServiceNow": "ServiceNow (ITSM + Workflow)",
+      "MicrosoftPowerPlatform": "Microsoft Power Platform",
+      "CustomBuild": "Custom Build"
+    },
+
+    "platformStrengths": {
+      "Salesforce": ["Leading CRM and case management capabilities", "Proven citizen-facing portal platform", "Strong ecosystem and AppExchange", "Advanced reporting and analytics", "Configurable without deep coding"],
+      "ServiceNow": ["ITSM industry leader", "Strong workflow automation and SLA enforcement", "Incident, problem, and change management built-in", "Excellent integration capabilities", "BC Government ITSM standard"],
+      "MicrosoftPowerPlatform": ["Low-code/no-code development", "Native M365 and Azure integration", "Rapid delivery cycles", "Cost-effective under BC Government licensing", "Broad citizen developer adoption"],
+      "CustomBuild": ["Full control over architecture and features", "No vendor lock-in", "Tailored to exact requirements", "Technology stack flexibility", "Can meet unique mandate needs"]
+    },
+
+    "platformWeaknesses": {
+      "Salesforce": ["Higher licensing cost", "Salesforce ecosystem dependency", "Requires specialized developer skills", "Data residency considerations"],
+      "ServiceNow": ["Enterprise licensing cost", "Complex configuration", "Primarily IT-operations focused", "Steep learning curve for non-IT teams"],
+      "MicrosoftPowerPlatform": ["Not suited for complex enterprise processes", "Governance gaps at scale", "Limited for external-facing services", "Premium connector costs add up"],
+      "CustomBuild": ["High development and maintenance cost", "Long delivery timeline", "Requires sustained in-house capability", "Higher governance and security review burden"]
+    },
+
+    "platformRisks": {
+      "Salesforce": "Vendor lock-in and licensing cost escalation are primary risks. Data residency and privacy compliance require ongoing attention for citizen-facing deployments.",
+      "ServiceNow": "Configuration complexity and change management overhead are key risks. Ensure ITSM processes are well-defined before implementation.",
+      "MicrosoftPowerPlatform": "Platform governance and citizen developer sprawl are primary risks at scale. Establish a Centre of Excellence and ALM practices early.",
+      "CustomBuild": "High delivery risk due to custom development complexity, timeline uncertainty, and long-term maintenance burden. Strong in-house capability or managed services required."
+    },
+
+    "platformAlternatives": {
+      "Salesforce": "If Salesforce licensing cost is prohibitive, consider Microsoft Power Platform for simpler citizen-facing needs, or ServiceNow for case management with ITSM integration requirements.",
+      "ServiceNow": "If ServiceNow scope is limited to non-IT workflows, consider Microsoft Power Platform for internal automation. For citizen services, evaluate Salesforce.",
+      "MicrosoftPowerPlatform": "If requirements exceed Power Platform capabilities, evaluate Salesforce for customer-facing needs or ServiceNow for workflow-heavy enterprise processes.",
+      "CustomBuild": "Before committing to custom build, re-evaluate Salesforce, ServiceNow, and Microsoft Power Platform against requirements. Custom build should be the last resort."
+    },
+
+    "_comment_rationale": "Section 5 – Supporting Rationale text for Rules Based Decision Engine",
+
+    "rationaleTemplates": {
+      "intro": "Based on {{answeredCount}} assessment responses, {{winnerDisplay}} achieved the highest platform suitability score ({{winnerScore}}/100).",
+      "keyEvidencePrefix": "Key evidence: {{signalSummary}}.",
+      "noSignals": "No specific keyword signals were matched in assessment responses. Platform selection is based on business context metadata and default scoring."
+    }
+  },
+
+  "confidence": {
+    "_comment": "Sections 5 + 7 – Confidence score and governance interpretation. Does NOT change platform decision, only confidence reporting",
+
+    "institutional": {
+      "_comment": "Section 5 – Institutional Knowledge Confidence (deterministic signal quality, completeness, and score separation)",
+
+      "conflictTopDiffThreshold": 10,
+      "lowOverallThreshold": 50,
+      "conflictMessages": {
+        "topDiff": "Top two platform scores are within {{diff}} points — recommendation requires careful architect review",
+        "lowOverall": "Overall deterministic confidence is below threshold — consider completing additional assessment steps"
+      },
+      "coverageScoring": {
+        "historicalMatches": { "highAtLeast": 2, "oneValue": 1, "highPoints": 3, "onePoints": 1, "nonePoints": 0 },
+        "rulesMatched": { "highAtLeast": 5, "mediumAtLeast": 2, "highPoints": 4, "mediumPoints": 2, "lowPoints": 0 },
+        "completeness": { "highAtLeast": 80, "mediumAtLeast": 50, "highPoints": 3, "mediumPoints": 2, "lowPoints": 0 },
+        "levelThresholds": { "highAtLeast": 8, "mediumAtLeast": 4 },
+        "explanations": {
+          "high": "Strong institutional knowledge coverage — multiple historical precedents, rich scoring evidence, and high assessment completeness support this recommendation.",
+          "medium": "Moderate institutional knowledge coverage — some historical precedent and scoring evidence available. Consider completing additional steps to strengthen confidence.",
+          "low": "Limited institutional knowledge coverage — few historical precedents or scoring signals. Architect review is recommended before proceeding."
+        }
+      },
+      "confidenceScoring": {
+        "completenessCaps": { "below50": 40, "below80": 80 },
+        "rulesCaps": { "none": 20, "below3": 60 },
+        "conflictPenalty": 15,
+        "labels": { "highAtLeast": 70, "mediumAtLeast": 40 },
+        "basis": "Deterministic signal quality, assessment completeness, and score separation"
+      }
+    },
+
+    "similarity": {
+      "_comment": "Section 7 – Advisory confidence from historical similarity layer (non-decisional)",
+
+      "historicalAlignment": {
+        "retrievalMethod": "Embedding cosine similarity (all-MiniLM-L6-v2)",
+        "noHistoricalNote": "No similar historical assessments found. Recommendation is based entirely on deterministic scoring without historical precedent.",
+        "nonDecisionalNote": "Historical similarity is non-decisional and does not affect platform selection — provided as contextual reference only."
+      },
+      "advisoryConfidence": {
+        "base": 40,
+        "businessContext": { "richLen": 200, "basicLen": 50, "richDelta": 15, "basicDelta": 5, "lowDelta": -10 },
+        "historicalMatches": { "twoPlusDelta": 20, "oneDelta": 10, "noneDelta": -15 },
+        "completeness": { "highAtLeast": 80, "highDelta": 10, "lowBelow": 50, "lowDelta": -10 },
+        "clamp": { "min": 5, "max": 95 },
+        "labels": { "highAtLeast": 70, "mediumAtLeast": 40 },
+        "basis": "Historical similarity evidence and assessment completeness (non-decisional, advisory only)"
+      }
+    }
+  },
+
+  "lowSignal": {
+    "_comment": "Pre-Section 4 fallback – Used when insufficient signals exist. Overrides normal recommendation with indicative suggestion and low confidence messaging",
+
+    "platformProfiles": [
+      {
+        "platform": "Salesforce",
+        "displayName": "Salesforce CRM",
+        "pros": ["Leading CRM platform", "Strong citizen-facing portal capabilities", "Proven at scale across governments"],
+        "cons": ["Higher licensing cost", "Deep Salesforce ecosystem dependency", "Requires specialized developer skills"],
+        "bestFitFor": "Citizen-facing services, CRM, case management, external portal applications",
+        "canadianContext": "Used across provincial governments for citizen engagement and service delivery"
+      },
+      {
+        "platform": "ServiceNow",
+        "displayName": "ServiceNow (ITSM + Workflow)",
+        "pros": ["ITSM industry leader", "Strong workflow automation", "Excellent SLA and incident management"],
+        "cons": ["Enterprise licensing cost", "Complex configuration and customization", "Primarily IT-operations focused"],
+        "bestFitFor": "IT service management, incident and change management, enterprise workflow automation",
+        "canadianContext": "BC Government ITSM standard platform for IT operations and service desk management"
+      },
+      {
+        "platform": "MicrosoftPowerPlatform",
+        "displayName": "Microsoft Power Platform",
+        "pros": ["Low-code/no-code development", "Deep M365 integration", "Rapid delivery", "Cost-effective under existing licenses"],
+        "cons": ["Not suited for complex enterprise processes", "Governance gaps at scale", "Limited for external-facing services"],
+        "bestFitFor": "Internal productivity, simple approval workflows, small-to-medium operational tools for BC Government staff",
+        "canadianContext": "M365 already licensed across BC Government — Power Platform adds value at minimal incremental cost"
+      },
+      {
+        "platform": "CustomBuild",
+        "displayName": "Custom Build",
+        "pros": ["Full control over features and architecture", "No vendor lock-in", "Tailored to bespoke requirements"],
+        "cons": ["High build and maintenance cost", "Long delivery timeline", "Requires sustained in-house development capability"],
+        "bestFitFor": "Unique or specialized requirements not addressed by existing COTS platforms",
+        "canadianContext": "Recommended only when no commercial platform meets the specific mandate requirements and business case supports custom development"
+      }
+    ],
+
+    "nudgeRules": [
+      { "pattern": "incident|service request|itsm|change management|sla|service desk|problem management", "platform": "ServiceNow", "costRationale": "ServiceNow is the BC Government standard ITSM platform with existing enterprise licensing." },
+      { "pattern": "citizen|external|portal|crm|case management|customer engagement|constituent", "platform": "Salesforce", "costRationale": "Salesforce is well-established for citizen-facing and CRM use cases across BC Government." },
+      { "pattern": "simple|lightweight|form|approval|internal|employee|staff|back-office|low-code", "platform": "MicrosoftPowerPlatform", "costRationale": "Microsoft Power Platform is cost-effective under existing BC Government M365 licensing." }
+    ],
+
+    "fallbackNudge": {
+      "platform": "MicrosoftPowerPlatform",
+      "costRationale": "Microsoft Power Platform is available under existing BC Government M365 licensing and provides a rapid, low-risk starting point for internal workflow needs."
+    },
+
+    "rationaleTemplate": "{{historyLabel}}Based on institutional knowledge patterns for this requirement type, {{platformDisplay}} is the indicative recommendation. {{costRationale}}",
+
+    "caveat": "This recommendation is based on limited assessment signals and carries reduced confidence. Architect review and further consultation with the platform team is recommended before proceeding to procurement.",
+
+    "overallConfidence": { "withHistory": 45, "withoutHistory": 25, "maxCap": 55 }
+  },
+
+  "explanations": {
+    "_comment": "Section 3 – Drives 'ARCHITECTURAL INTERPRETATION' and 'WHY THIS MATTERS' for each Assessment Signal. Does not affect scoring",
+
+    "default": {
+      "signalName": "Assessment Signal",
+      "stageName": "Platform Evaluation",
+      "factorName": "General Assessment Factor",
+      "interpretationTemplate": "Evidence detected in response: \"{{keyword}}\"",
+      "whyItMatters": "This response contributed to platform suitability scoring.",
+      "platformReasoningTemplate": "This response contributed {{points}} points toward {{platformLabel}} suitability based on keyword alignment with platform scoring rules."
+    },
+    "signalMetadata": {}
+  },
+
+  "platformGuidance": {
+    "_comment": "Sections 4 + 8 – Provides deeper narrative for Platform Evaluation and Final Recommendation (readiness, risks, governance, alignment)",
+
+    "keywordHeuristics": {
+      "lightweight": ["simple", "lightweight", "basic", "low-code", "form", "minimal", "small scale"],
+      "internal": ["internal", "staff", "employee", "back-office", "intranet", "ministry staff"],
+      "complexWorkflow": ["incident", "itsm", "workflow", "service request", "change management", "approval chain", "escalation", "sla"],
+      "smallOrg": ["small", "fewer than 500", "100 users", "50 users", "single team"]
+    },
+
+    "platformAssessments": {
+      "Salesforce": {
+        "organizationalReadiness": { "lightweight": 6, "default": 8 },
+        "readinessSummary": {
+          "lightweight": "Salesforce can support lightweight citizen-facing use cases but is best leveraged for complex CRM and case management scenarios.",
+          "default": "Salesforce is well-suited for citizen-facing portals, CRM, and case management at enterprise scale."
+        },
+        "estimatedTimelineMonths": { "lightweight": 4, "default": 9 },
+        "timelineRisks": [
+          { "lightweight": "Simpler implementations may underutilize platform capabilities.", "default": "Enterprise CRM deployments require extensive data modelling and integration work." },
+          { "lightweight": "Salesforce expertise may not be available in-house.", "default": "Third-party integrations and data migration are common delivery risks." }
+        ],
+        "estimatedTotalCostUSD": "Contact vendor for BC Government pricing",
+        "costExplanation": "Licensing cost not calculated per governance request. Finance team to assess total cost of ownership.",
+        "teamCapabilityGap": { "lightweight": "Low", "default": "Medium" },
+        "teamCapabilityNarrative": {
+          "lightweight": "Low capability gap — basic Salesforce configuration skills are sufficient for simple use cases.",
+          "default": "Medium capability gap — Salesforce Architect and Developer expertise required for enterprise implementations."
+        },
+        "governanceRiskLevel": { "lightweight": "Low", "default": "Medium" },
+        "governanceRiskExplanation": {
+          "lightweight": "Low governance risk — standard Salesforce cloud security and privacy controls apply.",
+          "default": "Medium governance risk — data residency, privacy, and vendor lock-in require ARB review."
+        },
+        "strategicAlignment": "Salesforce aligns with BC Government citizen service delivery and CRM strategies."
+      },
+      "ServiceNow": {
+        "organizationalReadiness": { "lightweight": 6, "default": 9 },
+        "readinessSummary": {
+          "lightweight": "ServiceNow can be configured for lightweight ITSM needs but full value requires enterprise-scale deployment.",
+          "default": "ServiceNow is the BC Government ITSM standard and is well-suited for high-volume IT operations and service management."
+        },
+        "estimatedTimelineMonths": { "lightweight": 3, "default": 9 },
+        "timelineRisks": [
+          { "lightweight": "Lightweight deployments may not justify enterprise licensing.", "default": "Complex workflow configuration and SLA rule definition extend implementation timelines." },
+          { "lightweight": "Existing ITSM processes must be mapped to ServiceNow workflows.", "default": "Integration with existing IT infrastructure and directory services requires careful planning." }
+        ],
+        "estimatedTotalCostUSD": "Covered under BC Government enterprise ITSM licensing",
+        "costExplanation": "BC Government holds enterprise ServiceNow licensing. Incremental cost is primarily implementation and configuration effort.",
+        "teamCapabilityGap": { "lightweight": "Low", "default": "Low" },
+        "teamCapabilityNarrative": {
+          "lightweight": "Low capability gap — ServiceNow expertise exists within BC Government ITSM teams.",
+          "default": "Low capability gap — BC Government has established ServiceNow capability and governance processes."
+        },
+        "governanceRiskLevel": { "lightweight": "Low", "default": "Low" },
+        "governanceRiskExplanation": {
+          "lightweight": "Low governance risk — ServiceNow is an approved BC Government platform with established security controls.",
+          "default": "Low governance risk — ServiceNow is the BC Government ITSM standard with proven compliance and security posture."
+        },
+        "strategicAlignment": "ServiceNow is the BC Government ITSM standard platform, directly aligned with IT operations strategy."
+      },
+      "MicrosoftPowerPlatform": {
+        "organizationalReadiness": { "lightweight": 9, "default": 7 },
+        "readinessSummary": {
+          "lightweight": "Microsoft Power Platform is the optimal choice for lightweight, internal workflow automation under existing M365 licensing.",
+          "default": "Microsoft Power Platform is suitable for internal operational tools but requires governance guardrails for enterprise use."
+        },
+        "estimatedTimelineMonths": { "lightweight": 2, "default": 6 },
+        "timelineRisks": [
+          { "lightweight": "Rapid delivery possible — governance and CoE practices should be established early.", "default": "Larger Power Platform implementations require a Centre of Excellence and platform governance model." },
+          { "lightweight": "Citizen developer sprawl is a risk without proper governance.", "default": "Complex processes may hit platform limitations requiring custom connectors or premium licensing." }
+        ],
+        "estimatedTotalCostUSD": "Included in existing BC Government M365 licensing",
+        "costExplanation": "Power Platform is available under existing BC Government M365 licensing. Premium connectors and additional capacity may require incremental spend.",
+        "teamCapabilityGap": { "lightweight": "Low", "default": "Low" },
+        "teamCapabilityNarrative": {
+          "lightweight": "Low capability gap — Power Platform skills are widely available across BC Government M365 users.",
+          "default": "Low capability gap — Power Platform developers and solution architects are available across BC Government."
+        },
+        "governanceRiskLevel": { "lightweight": "Low", "default": "Medium" },
+        "governanceRiskExplanation": {
+          "lightweight": "Low governance risk — standard M365 security and compliance controls apply for internal use.",
+          "default": "Medium governance risk — enterprise Power Platform use requires governance framework, ALM practices, and data loss prevention policies."
+        },
+        "strategicAlignment": "Microsoft Power Platform aligns with BC Government M365 strategy and digital workplace transformation."
+      },
+      "CustomBuild": {
+        "organizationalReadiness": { "lightweight": 4, "default": 5 },
+        "readinessSummary": {
+          "lightweight": "Custom build is rarely justified for lightweight needs. Evaluate COTS options before committing to custom development.",
+          "default": "Custom build is appropriate only when no commercial platform satisfies the unique requirements. Requires strong in-house or contracted development capability."
+        },
+        "estimatedTimelineMonths": { "lightweight": 6, "default": 18 },
+        "timelineRisks": [
+          { "lightweight": "Custom development timelines typically exceed commercial platform deployments.", "default": "Enterprise custom builds carry high schedule risk and require sustained team capacity." },
+          { "lightweight": "Ongoing maintenance burden must be accounted for in long-term planning.", "default": "Technology stack choices must align with BC Government standards and long-term support capability." }
+        ],
+        "estimatedTotalCostUSD": "High — requires full business case with Finance",
+        "costExplanation": "Custom development costs not calculated. Finance and procurement teams must conduct full total cost of ownership analysis before approval.",
+        "teamCapabilityGap": { "lightweight": "Medium", "default": "High" },
+        "teamCapabilityNarrative": {
+          "lightweight": "Medium capability gap — development team must be sourced and a technology stack agreed upon.",
+          "default": "High capability gap — full software development team, DevOps, security, and architecture expertise required."
+        },
+        "governanceRiskLevel": { "lightweight": "Medium", "default": "High" },
+        "governanceRiskExplanation": {
+          "lightweight": "Medium governance risk — custom software requires security assessment, accessibility review, and procurement approval.",
+          "default": "High governance risk — custom builds require full ARB approval, security threat model, STRA, and PIA before proceeding."
+        },
+        "strategicAlignment": "Custom build is a last resort — only proceed after demonstrating no COTS platform meets requirements."
+      }
+    },
+
+    "recommendationBasis": {
+      "lightweightOrSmallOrInternal": "Microsoft Power Platform is recommended for this lightweight internal use case. It leverages existing M365 licensing, enables rapid delivery, and minimizes incremental cost.",
+      "complexWorkflow": "ServiceNow or Salesforce is recommended for this complex workflow use case. Enterprise ITSM or CRM requirements are best served by established government-standard platforms.",
+      "fallback": "Platform selection is driven by deterministic scoring of assessment responses against BC Government platform standards."
+    },
+
+    "strategicConsiderations": [
+      "Align platform selection with existing BC Government enterprise agreements to minimize licensing cost",
+      "Evaluate vendor lock-in risk and ensure platform supports BC Government data residency requirements",
+      "Consider long-term maintainability and availability of in-house or contracted platform expertise",
+      "Ensure selected platform supports BC Government accessibility standards (WCAG 2.1 AA)",
+      "Review IM/IT security requirements and complete STRA and PIA as required"
+    ],
+
+    "riskWarnings": {
+      "lightweight": "Lightweight implementations should establish governance guardrails early to prevent uncontrolled platform sprawl.",
+      "default": "Enterprise platform deployments require Architecture Review Board approval and a detailed implementation plan before proceeding.",
+      "shared": [
+        "All platform deployments must comply with BC Government IM/IT security policies",
+        "Accessibility (WCAG 2.1 AA) compliance is mandatory for citizen-facing services",
+        "Data classification and privacy impact assessment required before go-live"
+      ]
+    },
+
+    "opportunityWindows": [
+      "Leverage existing BC Government enterprise licensing agreements to reduce time-to-value",
+      "Align implementation with current ministry digital transformation priorities",
+      "Build reusable components and patterns that can be shared across ministries",
+      "Engage BC Government platform community of practice for lessons learned and shared assets"
+    ]
+  },
+
+  "recommendationTemplate": {
+    "_comment": "Section 8 – Final Recommendation structure (summary, rationale, next steps, disclaimer)",
+
+    "summary": "This Enterprise Architecture Assessment evaluated {{assessmentName}} against BC Government platform standards. The recommended platform is {{displayName}}, which aligns best with the stated business requirements and organizational readiness. Deterministic confidence: {{confidenceScore}}%.{{similarContextSuffix}}",
+    "platformAnalysisWithBestFit": "{{displayName}} is the recommended platform for this assessment. {{rationale}} This platform is best suited for: {{bestFitFor}}.",
+    "platformAnalysisFallback": "Based on deterministic scoring of assessment responses, the recommended platform has been selected. {{rationale}}",
+    "nextSteps": "Next Steps:\n• Complete business case development with Finance\n• Initiate vendor engagement and licensing negotiations\n• Begin detailed implementation planning with the relevant platform and ministry teams\n• Schedule Architecture Review Board presentation\n• Complete STRA, PIA, and accessibility review as required",
+    "disclaimer": "This assessment provides a governance-ready platform recommendation based on deterministic scoring rules, historical assessment comparison, and BC Government platform standards. All recommendations should be validated by the Architecture Review Board before procurement or implementation proceeds."
+  },
+
+  "similarity": {
+    "_comment": "Section 6 – Historical Similarity Evidence. Context only, does NOT influence platform decision",
+
+    "signalThreshold": 20,
+    "circuitBreakerResetMs": 300000,
+
+    "stopWords": ["the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by", "from", "as", "is", "was", "are", "were", "be", "been", "being", "have", "has", "had", "do", "does", "did", "will", "would", "could", "should", "may", "might", "must", "shall", "can", "this", "that", "these", "those", "it", "its", "not", "no", "nor", "so", "yet", "both", "also", "just", "than", "then", "when", "where", "which", "who", "what", "all", "any", "each", "more", "most", "other", "some", "such", "only", "own", "same", "very", "into", "over", "after", "through", "during", "before", "between", "up", "out", "off", "above", "below", "under", "again", "further", "once", "our", "we", "they", "their", "there", "here", "how", "its", "been", "across", "within", "without", "per", "via", "etc"],
+
+    "categoryModel": [
+      { "key": "architecturalCapabilities", "label": "Architectural capabilities",  "weight": 0.20 },
+      { "key": "businessAlignment",         "label": "Business alignment",           "weight": 0.20 },
+      { "key": "operatingModel",            "label": "Operating model",              "weight": 0.15 },
+      { "key": "workflowCharacteristics",   "label": "Workflow characteristics",     "weight": 0.15 },
+      { "key": "integrationPatterns",       "label": "Integration patterns",         "weight": 0.10 },
+      { "key": "securityRequirements",      "label": "Security requirements",        "weight": 0.10 },
+      { "key": "governanceRequirements",    "label": "Governance requirements",      "weight": 0.05 },
+      { "key": "platformSelectionFactors",  "label": "Platform selection factors",   "weight": 0.05 }
+    ],
+
+    "lexicalFallback": {
+      "serviceUnavailableNote": "Lexical similarity computed for {{category}} — semantic embedding service was temporarily unavailable.",
+      "precisionReductionNote": "Score precision is reduced because lexical keyword analysis was used in place of semantic embedding comparison.",
+      "unavailableDiffTemplate": "{{category}} could not be semantically compared — local embedding service was unavailable at scoring time.",
+      "unavailableReductionTemplate": "Category excluded from weighted scoring because semantic service was unavailable and no lexical fallback score could be produced."
+    },
+
+    "narratives": {
+      "categoryMatch": {
+        "Architectural capabilities":  "Both assessments share substantive architectural capability requirements including platform features, integration depth, and operational scale.",
+        "Business alignment":          "Both assessments reflect directionally aligned business goals, drivers, and strategic priorities for the ministry.",
+        "Operating model":             "Both assessments describe a similar operating model including shared-service considerations, staffing, and delivery structure.",
+        "Workflow characteristics":    "Both assessments involve workflow-driven processes with comparable approval complexity, routing logic, and automation requirements.",
+        "Integration patterns":        "Both assessments require integration with enterprise systems at similar breadth and technical depth.",
+        "Security requirements":       "Both assessments share comparable security, audit, and data protection requirements.",
+        "Governance requirements":     "Both assessments operate under similar governance frameworks, compliance obligations, and ARB expectations.",
+        "Platform selection factors":  "Both assessments weighed platform selection factors such as vendor maturity, ecosystem support, and delivery risk in comparable ways."
+      },
+      "categoryDifference": {
+        "Architectural capabilities":  "Architectural capability requirements differ in meaningful ways that reduce direct applicability of the historical precedent.",
+        "Business alignment":          "Business goals and strategic drivers differ between the two assessments, limiting direct precedent relevance.",
+        "Operating model":             "The operating model and delivery structure differ between the two assessments.",
+        "Workflow characteristics":    "Workflow complexity, approval patterns, and automation requirements differ between the two assessments.",
+        "Integration patterns":        "Integration breadth and depth differ significantly between the two assessments.",
+        "Security requirements":       "Security and compliance obligations differ in ways that affect platform fit.",
+        "Governance requirements":     "Governance frameworks and compliance obligations differ between the assessments.",
+        "Platform selection factors":  "Platform selection criteria and constraints differ between the two assessments."
+      },
+      "categoryReduction": {
+        "Architectural capabilities":  "Differences in architectural capability requirements reduced the similarity score for this category.",
+        "Business alignment":          "Diverging business priorities and strategic context reduced the similarity contribution of this category.",
+        "Operating model":             "Operating model differences reduced the similarity score for this category.",
+        "Workflow characteristics":    "Differences in workflow complexity and process design reduced the similarity score.",
+        "Integration patterns":        "Differences in integration scope and technical requirements reduced the similarity score.",
+        "Security requirements":       "Different security and compliance obligations reduced the similarity score for this category.",
+        "Governance requirements":     "Governance and compliance differences reduced the similarity score for this category.",
+        "Platform selection factors":  "Differing platform selection constraints reduced the similarity score for this category."
+      },
+      "categoryAlignmentEvidence": {
+        "Architectural capabilities":  "Architectural capability requirements remained materially aligned between the two assessments.",
+        "Business alignment":          "Business alignment and strategic goals remained substantively consistent between the two assessments.",
+        "Operating model":             "The operating model remained substantively consistent between the two assessments.",
+        "Workflow characteristics":    "Workflow characteristics and process requirements remained substantively aligned.",
+        "Integration patterns":        "Integration patterns and technical requirements remained materially consistent.",
+        "Security requirements":       "Security and data protection requirements remained materially aligned.",
+        "Governance requirements":     "Governance obligations remained substantively consistent between the two assessments.",
+        "Platform selection factors":  "Platform selection factors remained materially aligned between the two assessments."
+      },
+      "categoryDivergenceEvidence": {
+        "Architectural capabilities":  "Architectural capability requirements diverged materially between the two assessments.",
+        "Business alignment":          "Business alignment and strategic priorities diverged materially between the two assessments.",
+        "Operating model":             "The operating model diverged materially between the two assessments.",
+        "Workflow characteristics":    "Workflow characteristics diverged materially between the two assessments.",
+        "Integration patterns":        "Integration patterns diverged materially between the two assessments.",
+        "Security requirements":       "Security and compliance requirements diverged materially between the two assessments.",
+        "Governance requirements":     "Governance requirements diverged materially between the two assessments.",
+        "Platform selection factors":  "Platform selection factors diverged materially between the two assessments."
+      }
+    }
+  },
+
+  "_comment_final": "Deterministic decision = platformRules + confidence (Section 5). Similarity (Section 6) is informational only and must not affect scoring."
+}

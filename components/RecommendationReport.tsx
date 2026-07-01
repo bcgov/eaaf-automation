@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import styles from "./RecommendationReport.module.css";
+import JurisdictionScan, { JurisdictionScanSummary } from "./JurisdictionScan";
+import InnovativeSolutions, { InnovativeSolutionsSummary } from "./InnovativeSolutions";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -110,6 +112,7 @@ interface StoredRecommendationSummary {
   risks: string;
   alternatives: string;
   created_at: string;
+  responsesChangedSince: boolean;
   architect_approval?: "agree" | "disagree" | null;
   architect_approval_reason?: string | null;
   architect_approval_recorded_at?: string | null;
@@ -221,7 +224,9 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
   const [rec, setRec] = useState<FullRec | null>(null);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hydrationAttempted, setHydrationAttempted] = useState(false);
+  const [showExecutiveSummary, setShowExecutiveSummary] = useState(false);
+  const [jurisdictionSummary, setJurisdictionSummary] = useState<JurisdictionScanSummary | null>(null);
+  const [innovativeSummary, setInnovativeSummary] = useState<InnovativeSolutionsSummary | null>(null);
   const [architectApproval, setArchitectApproval] = useState<"agree" | "disagree" | "">("");
   const [architectApprovalReason, setArchitectApprovalReason] = useState("");
   const [approvalSaving, setApprovalSaving] = useState(false);
@@ -231,11 +236,18 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
     setGenerating(true); setError(null);
     try {
       const res = await fetch(`${BASE_PATH}/api/assessment/${assessmentId}/recommend`, { method: "POST" });
-      if (!res.ok) throw new Error("Server error");
+      if (!res.ok) {
+        let message = "Failed to generate report. Ensure responses have been saved.";
+        try {
+          const data = await res.json();
+          if (data?.error) message = data.error;
+        } catch { /* ignore parse errors */ }
+        throw new Error(message);
+      }
       setRec(await res.json());
-    } catch {
+    } catch (e) {
       if (showError) {
-        setError("Failed to generate report. Ensure responses have been saved.");
+        setError(e instanceof Error ? e.message : "Failed to generate report. Ensure responses have been saved.");
       }
     }
     finally { setGenerating(false); }
@@ -246,17 +258,16 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
   };
 
   useEffect(() => {
-    if (!existingRecommendation || rec || generating || hydrationAttempted) return;
-
+    if (rec || generating) return;
+    if (!existingRecommendation) return;
     if (isFullRecommendation(existingRecommendation)) {
       setRec(existingRecommendation);
-      return;
+    } else if (!existingRecommendation.responsesChangedSince) {
+      // Nothing changed since last report — auto-generate silently
+      loadReport(false);
     }
-
-    // A prior recommendation exists in DB; hydrate full report view automatically.
-    setHydrationAttempted(true);
-    void loadReport(false);
-  }, [existingRecommendation, rec, generating, hydrationAttempted]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingRecommendation, rec, generating]);
 
   useEffect(() => {
     if (!rec) return;
@@ -282,7 +293,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
   if (!rec) return (
     <div className={styles.promptScreen}>
       <button onClick={generate} disabled={generating} className={styles.generateBtn}>
-        {generating ? "Generating Report..." : "Generate Assessment Report"}
+        {generating ? "Generating Report..." : "Generate Full Report"}
       </button>
       <div className={styles.promptIcon}>📋</div>
       <h3>Generate Governance Assessment Report</h3>
@@ -302,6 +313,7 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
   const journeySignals = allSignals.filter((sig) => sig.stageName !== "Assessment Metadata");
   const deterministicSuitabilityScore = rec.deterministicSuitabilityScore ?? rec.confidenceScore;
   const sortedPlatformScores = [...platformScores].sort((a, b) => b.score - a.score);
+  const archStepResponses = stepsWithData?.find(s => s.stepKey === "ARCHITECTURE")?.questionsAndResponses.filter(q => q.response_text?.trim()) ?? [];
   const hasOtherFactors = !!rec.aiStrategicAssessment;
   const dominantHistorical = (() => {
     if (!historicalPrecedentMatches || historicalPrecedentMatches.length === 0) {
@@ -356,8 +368,116 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
           <h2>Enterprise Architecture Assessment Report</h2>
           <span className={styles.reportSubtitle}>{assessmentMeta?.name} — BC Government EAAF Platform Evaluation</span>
         </div>
-        <button onClick={generate} disabled={generating} className={styles.regenerateBtn}>{generating ? "Regenerating..." : "Regenerate"}</button>
+        <div style={{ display: "flex", gap: ".5rem", alignItems: "center", flexWrap: "wrap" }}>
+          <button onClick={generate} disabled={generating} className={styles.regenerateBtn}>{generating ? "Generating..." : "(Re)generate Full Report"}</button>
+          <button onClick={() => setShowExecutiveSummary(v => !v)} className={styles.execSummaryBtn}>{showExecutiveSummary ? "Hide Executive Summary" : "Show Executive Summary"}</button>
+          <button onClick={() => window.print()} className={styles.printBtn}>Print Full Report</button>
+        </div>
       </div>
+
+      {showExecutiveSummary && (
+        <div className={styles.execPanel}>
+          <div className={styles.execPanelHeader}>
+            <h3 className={styles.execPanelTitle}>Executive Summary</h3>
+            <span className={styles.execPanelAudience}>For senior executives, decision makers, and governance bodies</span>
+          </div>
+
+          <div className={styles.execGrid}>
+
+            {/* 1 — Business Problem */}
+            <div className={styles.execSection}>
+              <div className={styles.execLabel}>Business Problem</div>
+              <div className={styles.execValue}>
+                {assessmentMeta?.businessContext || assessmentMeta?.businessGoals || "Not specified"}
+              </div>
+            </div>
+
+            {/* 2 — Recommended Solution */}
+            <div className={styles.execSection}>
+              <div className={styles.execLabel}>Recommended Solution</div>
+              <div className={styles.execValue}>
+                <strong>{rec.displayName}</strong>
+                {rec.rationale ? <span className={styles.execRationale}> — {rec.rationale}</span> : null}
+              </div>
+            </div>
+
+            {/* 3 — Decision Confidence */}
+            <div className={styles.execSection}>
+              <div className={styles.execLabel}>Decision Confidence</div>
+              <div className={styles.execValue}>
+                <span className={`${styles.execConfidenceBadge} ${
+                  institutionalConfidence?.label === "High" ? styles.execConfHigh :
+                  institutionalConfidence?.label === "Medium" ? styles.execConfMedium :
+                  styles.execConfLow
+                }`}>{institutionalConfidence?.label ?? "Low"}</span>
+                {institutionalConfidence?.basis && (
+                  <span className={styles.execConfBasis}> — {institutionalConfidence.basis}</span>
+                )}
+                {(historicalPrecedentMatches?.length ?? 0) > 0 ? (
+                  <span className={styles.execConfHistorical}>
+                    {" "}{historicalPrecedentMatches.length} similar past assessment{historicalPrecedentMatches.length !== 1 ? "s" : ""} found within the organization
+                    {historicalPrecedentMatches[0] ? (
+                      <> — closest match: <strong>{historicalPrecedentMatches[0].name}</strong> ({Math.round(historicalPrecedentMatches[0].similarityScore * 100)}% similar, used <strong>{historicalPrecedentMatches[0].platform}</strong>)</>
+                    ) : null}.
+                  </span>
+                ) : (
+                  <span className={styles.execConfHistorical}> No comparable internal assessments on record.</span>
+                )}
+              </div>
+            </div>
+
+            {/* 4 — Jurisdictional Scan */}
+            <div className={styles.execSection}>
+              <div className={styles.execLabel}>Jurisdictional Scan <span className={styles.execAiTag}>(AI Assisted)</span></div>
+              <div className={styles.execValue}>
+                {jurisdictionSummary ? (
+                  <>
+                    <span>{jurisdictionSummary.totalCount} comparable public sector implementation{jurisdictionSummary.totalCount !== 1 ? "s" : ""} identified across {jurisdictionSummary.regions.join(", ")}.</span>
+                    {jurisdictionSummary.topEntries.map((entry, i) => (
+                      <span key={i} className={styles.execJurisdictionTop}>
+                        <strong>#{i + 1} {entry.organization}</strong> ({entry.jurisdiction}{entry.platform ? ` · ${entry.platform}` : ""}, {entry.alignmentScore}% alignment) — {entry.alignmentRationale || entry.outcome}
+                      </span>
+                    ))}
+                  </>
+                ) : (
+                  <span className={styles.execPending}>Run the Jurisdictional Scan in Section 8 to populate this field.</span>
+                )}
+              </div>
+            </div>
+
+            {/* 5 — Innovative Ideas */}
+            <div className={styles.execSection}>
+              <div className={styles.execLabel}>Innovative Options <span className={styles.execAiTag}>(AI Assisted)</span></div>
+              <div className={styles.execValue}>
+                {innovativeSummary ? (
+                  <ul className={styles.execIdeaList}>
+                    {innovativeSummary.topIdeas.map((idea, i) => (
+                      <li key={i}>
+                        <strong>{idea.ideaName}</strong> — {idea.description}
+                        {idea.whyRelevant ? <span className={styles.execIdeaRelevance}> {idea.whyRelevant}</span> : null}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className={styles.execPending}>Run AI-Assisted Innovative Solutions in Section 9 to populate this field.</span>
+                )}
+              </div>
+            </div>
+
+            {/* 6 — Final Recommendation */}
+            <div className={`${styles.execSection} ${styles.execFinalSection}`}>
+              <div className={styles.execLabel}>Final Recommendation</div>
+              <div className={styles.execValue}>
+                <strong>{rec.displayName}</strong> is the recommended platform for {assessmentMeta?.name ?? "this assessment"}.
+                {" "}The assessment was conducted using a structured rules-based evaluation framework validated against {confidenceBreakdown?.totalAnswered ?? 0} architect responses.
+                {" "}Confidence in this recommendation is <strong>{institutionalConfidence?.label ?? "Low"}</strong>.
+                {" "}This recommendation is subject to final architect review and governance approval.
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       <div className={styles.finalRecommendationHero}>
         <h3 className={styles.finalRecommendationTitle}>FINAL RECOMMENDATION: {rec.displayName}</h3>
@@ -861,8 +981,30 @@ export default function RecommendationReport({ assessmentId, existingRecommendat
         </div>
       </Section>
 
-      {/* 8 — FINAL RECOMMENDATION */}
-      <Section title="8 — Final Recommendation" badge="Architect Review" defaultOpen={true}>
+      {/* 8 — JURISDICTION SCAN */}
+      <Section title="8 — Jurisdiction Scan" badge="AI-Assisted" defaultOpen={false}>
+        <p className={styles.sectionExplanation}>
+          Identifies real-world Canadian public sector implementations most closely aligned with this
+          assessment&apos;s business problem, drivers, requirements, current state, and proposed solution.
+          Results are generated by an AI model and require independent verification before use
+          in governance submissions. Requires <code>JURISDICTION_AI_KEY</code> and <code>JURISDICTION_AI_ENDPOINT</code> in <code>.env.local</code>.
+        </p>
+        <JurisdictionScan assessmentId={assessmentId} onResult={setJurisdictionSummary} />
+      </Section>
+
+      {/* 9 — AI-ASSISTED INNOVATIVE SOLUTIONS */}
+      <Section title="9 — AI-Assisted Innovative Solutions" badge="AI-Assisted" defaultOpen={false}>
+        <p className={styles.sectionExplanation}>
+          Exploratory AI-generated alternatives and architectural variations related to the proposed solution.
+          These ideas are intended to broaden architectural thinking and are not recommendations.
+          They do not influence the deterministic platform decision.
+          Requires <code>JURISDICTION_AI_KEY</code> and <code>JURISDICTION_AI_ENDPOINT</code> in <code>.env.local</code>.
+        </p>
+        <InnovativeSolutions assessmentId={assessmentId} onResult={setInnovativeSummary} />
+      </Section>
+
+      {/* 10 — FINAL RECOMMENDATION */}
+      <Section title="10 — Final Recommendation" badge="Architect Review" defaultOpen={true}>
         <p className={styles.sectionExplanation}>
           Confirm whether you agree with the platform choice above. This approval is recorded for governance review only and does not change the current recommendation or any future scoring logic.
         </p>

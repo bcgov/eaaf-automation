@@ -316,3 +316,12 @@
   font-size: 0.9rem;
   color: #888;
 }
+
+/* ─── Print / PDF output ─────────────────────────────────────────────────── */
+@media print {
+  .topNav,
+  .progressBar,
+  .navigation {
+    display: none !important;
+  }
+}

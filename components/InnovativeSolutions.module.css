@@ -1,0 +1,228 @@
+/* ── Idle / Prompt ─────────────────────────────────────────────────────── */
+
+.promptState {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: #f8f9fc;
+  border: 1px solid #dde2ee;
+  border-radius: 8px;
+}
+
+.promptText {
+  margin: 0;
+  font-size: .9rem;
+  color: #444;
+  line-height: 1.6;
+}
+
+.generateButton {
+  padding: .55rem 1.4rem;
+  background: #1a56db;
+  color: #fff;
+  font-size: .88rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.generateButton:hover { background: #1342b0; }
+
+/* ── Loading ──────────────────────────────────────────────────────────── */
+
+.loadingState {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: 1.25rem 1.5rem;
+  color: #555;
+  font-size: .9rem;
+}
+
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid #c0cce8;
+  border-top-color: #1a56db;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Error ────────────────────────────────────────────────────────────── */
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  padding: 1rem 1.25rem;
+  background: #fff5f5;
+  border: 1px solid #f5c0c0;
+  border-radius: 8px;
+  color: #7a1010;
+  font-size: .88rem;
+}
+
+.retryButton {
+  align-self: flex-start;
+  padding: .4rem 1rem;
+  background: #fff;
+  border: 1px solid #d44;
+  border-radius: 5px;
+  color: #a33;
+  font-size: .84rem;
+  cursor: pointer;
+}
+.retryButton:hover { background: #fff0f0; }
+
+/* ── Results ──────────────────────────────────────────────────────────── */
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.metaBar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: .78rem;
+  color: #666;
+  padding: .5rem .75rem;
+  background: #f3f5fb;
+  border-radius: 6px;
+  border: 1px solid #e0e5f0;
+}
+.metaBar span { flex: 1 1 auto; }
+
+.regenerateButton {
+  padding: .3rem .8rem;
+  background: #fff;
+  border: 1px solid #b0bdd8;
+  border-radius: 5px;
+  color: #444;
+  font-size: .78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.regenerateButton:hover { background: #eef1fa; }
+
+.disclaimer {
+  font-size: .8rem;
+  color: #7a6200;
+  background: #fffbea;
+  border: 1px solid #e8d87a;
+  border-radius: 6px;
+  padding: .65rem 1rem;
+  line-height: 1.5;
+}
+
+.ideaList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Idea Card ────────────────────────────────────────────────────────── */
+
+.ideaCard {
+  border: 1px solid #d4daf0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.ideaHeader {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .85rem 1.25rem;
+  background: linear-gradient(90deg, #1a3a6e 0%, #2a5cad 100%);
+  color: #fff;
+}
+
+.ideaNumber {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,.18);
+  padding: .2rem .55rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.ideaName {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ideaBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.ideaSection {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+
+.ideaLabel {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #3a5caa;
+}
+
+.ideaText {
+  margin: 0;
+  font-size: .9rem;
+  color: #333;
+  line-height: 1.65;
+}
+
+.applicabilityText {
+  font-style: italic;
+  color: #444;
+}
+
+/* ── Two-column layout for Benefits / Risks ──────────────────────────── */
+
+.ideaColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 640px) {
+  .ideaColumns { grid-template-columns: 1fr; }
+}
+
+.ideaBulletList {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+
+.ideaBulletList li {
+  font-size: .88rem;
+  line-height: 1.55;
+  color: #333;
+}
+
+.benefit::marker { color: #1a8a3a; }
+.benefit { color: #1a5a28; }
+
+.risk::marker { color: #b03020; }
+.risk { color: #7a2010; }

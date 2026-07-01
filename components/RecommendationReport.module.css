@@ -507,3 +507,203 @@
 .finalRecommendationButton:disabled { opacity:.6; cursor:not-allowed; }
 .finalRecommendationStatus { font-size:.82rem; color:#555; }
 .finalRecommendationSaved { background:#f0f7ff; border:1px solid #b3d4f7; border-radius:6px; padding:.75rem 1rem; font-size:.82rem; color:#0051a8; line-height:1.5; }
+
+/* ─── Print PDF button ───────────────────────────────────────────────────── */
+.printBtn {
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.55);
+  border-radius: 5px;
+  padding: .4rem .9rem;
+  font-size: .82rem;
+  cursor: pointer;
+  transition: background .2s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+}
+.printBtn:hover { background: rgba(255,255,255,.28); }
+
+/* ─── Executive Summary button ───────────────────────────────────────────── */
+.execSummaryBtn {
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.55);
+  border-radius: 5px;
+  padding: .4rem .9rem;
+  font-size: .82rem;
+  cursor: pointer;
+  transition: background .2s;
+  white-space: nowrap;
+}
+.execSummaryBtn:hover { background: rgba(255,255,255,.28); }
+
+/* ─── Executive Summary Panel ────────────────────────────────────────────── */
+.execPanel {
+  margin: 0;
+  padding: 1.5rem 1.75rem 1.75rem;
+  background: #f7f9ff;
+  border-bottom: 3px solid #003366;
+}
+.execPanelHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.execPanelTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #002244;
+  margin: 0;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.execPanelAudience {
+  font-size: .75rem;
+  color: #6677aa;
+  font-style: italic;
+}
+.execGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.execSection {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: .75rem;
+  align-items: start;
+  padding: .85rem 0;
+  border-bottom: 1px solid #dde6f5;
+}
+.execSection:first-child { padding-top: 0; }
+.execSection:last-child { border-bottom: none; padding-bottom: 0; }
+.execLabel {
+  font-size: .7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #003366;
+  padding-top: .15rem;
+  line-height: 1.4;
+}
+.execValue {
+  font-size: .9rem;
+  color: #1e2d3d;
+  line-height: 1.65;
+}
+.execRationale {
+  color: #445;
+  font-style: italic;
+}
+.execConfidenceBadge {
+  display: inline-block;
+  font-size: .78rem;
+  font-weight: 700;
+  padding: .18rem .65rem;
+  border-radius: 999px;
+  letter-spacing: .04em;
+}
+.execConfHigh   { background: #d4f0dc; color: #1a5c2a; }
+.execConfMedium { background: #fff3cd; color: #7a5000; }
+.execConfLow    { background: #fde8e8; color: #8a1515; }
+.execConfBasis {
+  font-size: .875rem;
+  color: #445;
+}
+.execJurisdictionTop {
+  display: block;
+  margin-top: .3rem;
+  font-size: .875rem;
+  color: #334;
+}
+.execPending {
+  font-size: .82rem;
+  color: #7a8aaa;
+  font-style: italic;
+}
+.execIdeaList {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+.execIdeaList li {
+  font-size: .875rem;
+  color: #1e2d3d;
+}
+.execConfHistorical {
+  display: block;
+  margin-top: .35rem;
+  font-size: .82rem;
+  color: #445;
+}
+.execAiTag {
+  font-size: .68rem;
+  font-weight: 400;
+  color: #6677aa;
+  font-style: italic;
+  letter-spacing: .02em;
+  text-transform: none;
+}
+.execIdeaRelevance {
+  display: block;
+  margin-top: .2rem;
+  font-size: .78rem;
+  color: #6677aa;
+  font-style: italic;
+}
+.execFinalSection {
+  background: #eef3ff;
+  border-radius: 6px;
+  padding: .85rem .85rem !important;
+  margin-top: .5rem;
+  border-bottom: none !important;
+  border: 1px solid #c5d4f0;
+}
+/* keep the old chip/ranking classes in case used elsewhere */
+.execList { margin: .15rem 0 0 1rem; padding: 0; font-size: .85rem; color: #2c3e50; }
+.execList li { margin-bottom: .35rem; }
+.execPlatformRanking { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .6rem; }
+.execPlatformChip { background: #eaf2ff; color: #15439a; border: 1px solid #c8daf8; border-radius: 999px; padding: 3px 10px; font-size: .75rem; font-weight: 600; white-space: nowrap; }
+.execPlatformWinner { background: #003366; color: #fff; border-color: #003366; }
+
+/* ─── Print / PDF output ─────────────────────────────────────────────────── */
+@media print {
+  /* Force every collapsed section and sub-section fully open */
+  .sectionBodyWrap,
+  .subSectionBodyWrap {
+    max-height: none !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    transition: none !important;
+  }
+
+  /* Hide interactive chrome */
+  .sectionChevron,
+  .subSectionChevron,
+  .regenerateBtn,
+  .printBtn,
+  .execSummaryBtn,
+  .finalRecommendationActions,
+  .finalRecommendationOptions,
+  .finalRecommendationReason {
+    display: none !important;
+  }
+
+  /* Remove hover effects and make headers static */
+  .sectionHeader,
+  .subSectionHeader {
+    cursor: default;
+    pointer-events: none;
+  }
+
+  /* Avoid splitting a section across pages where possible */
+  .section,
+  .subSection {
+    break-inside: avoid-page;
+  }
+}
