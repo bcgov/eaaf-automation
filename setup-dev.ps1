@@ -152,7 +152,6 @@ if (Test-Path "data/app.db") {
     npm run db:init
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  ERROR Database initialization failed" -ForegroundColor Red
-        Write-Host "  Please ensure seed-data/seed-questions.local.json exists" -ForegroundColor Yellow
         exit 1
     }
     Write-Host "  OK Database initialized" -ForegroundColor Green
@@ -197,15 +196,42 @@ if (-not $SkipEmbeddings) {
 
         Write-Host "  Starting embedding service on http://127.0.0.1:8001" -ForegroundColor Cyan
 
+        $logFile = Join-Path $PWD "local-embedding-service\embedding-service.log"
         $embeddingProcess = Start-Process -FilePath $venvPython `
             -ArgumentList "local-embedding-service/app.py" `
             -NoNewWindow `
+            -RedirectStandardOutput $logFile `
+            -RedirectStandardError $logFile `
             -PassThru
 
-        Write-Host "  OK Embedding service started (PID: $($embeddingProcess.Id))" -ForegroundColor Green
-        Write-Host "    To stop: Stop-Process -Id $($embeddingProcess.Id)" -ForegroundColor Gray
+        Write-Host "  Waiting for embedding service to be ready (log: local-embedding-service\embedding-service.log)..." -ForegroundColor Cyan
 
-        Start-Sleep -Seconds 2
+        $maxWait = 45
+        $waited = 0
+        $ready = $false
+        while ($waited -lt $maxWait) {
+            Start-Sleep -Seconds 2
+            $waited += 2
+            try {
+                $resp = Invoke-WebRequest -Uri "http://127.0.0.1:8001/health" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
+                if ($resp.StatusCode -eq 200) {
+                    $ready = $true
+                    break
+                }
+            } catch {
+                # not ready yet
+            }
+            Write-Host "  ... waiting ($waited/$maxWait s)" -ForegroundColor Gray
+        }
+
+        if ($ready) {
+            Write-Host "  OK Embedding service ready (PID: $($embeddingProcess.Id))" -ForegroundColor Green
+            Write-Host "    To stop: Stop-Process -Id $($embeddingProcess.Id)" -ForegroundColor Gray
+        } else {
+            Write-Host "  WARNING Embedding service did not respond within $maxWait seconds" -ForegroundColor Yellow
+            Write-Host "  Check log: local-embedding-service\embedding-service.log" -ForegroundColor Yellow
+            Write-Host "  App will still start — run 'npm run embeddings:service' manually if needed" -ForegroundColor Gray
+        }
     } else {
         Write-Host "  WARNING Python or venv not available - skipping embedding service" -ForegroundColor Yellow
     }

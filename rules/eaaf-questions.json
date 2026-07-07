@@ -1,0 +1,458 @@
+{
+  "steps": [
+    {
+      "key": "ARCHITECTURE",
+      "name": "Architecture Assessment",
+      "sequence": 1,
+      "description": "Assess current and target architecture"
+    },
+    {
+      "key": "CLOUD_ASSESSMENT",
+      "name": "Cloud Assessment",
+      "sequence": 2,
+      "description": "Evaluate SaaS suitability and cloud adoption constraints"
+    },
+    {
+      "key": "PLATFORM_ASSESSMENT",
+      "name": "Platform Assessment",
+      "sequence": 3,
+      "description": "Evaluate platform fit, integration capability, and ecosystem maturity"
+    },
+    {
+      "key": "OPERATIONAL_CONSIDERATIONS",
+      "name": "Operational Considerations",
+      "sequence": 4,
+      "description": "Assess operational support, governance, and risk readiness"
+    },
+    {
+      "key": "FINAL_RECOMMENDATION",
+      "name": "Final Recommendation",
+      "sequence": 5,
+      "description": "Synthesize final platform recommendation rationale"
+    }
+  ],
+  "factors": [
+    {
+      "id": "fac_arch_common_components",
+      "stepKey": "ARCHITECTURE",
+      "factorKey": "common_components",
+      "name": "Common Components",
+      "description": "Evaluate reusable enterprise components and fit",
+      "displayOrder": 1
+    },
+    {
+      "id": "fac_arch_security",
+      "stepKey": "ARCHITECTURE",
+      "factorKey": "security",
+      "name": "Security",
+      "description": "Assess architecture-level security readiness",
+      "displayOrder": 2
+    },
+    {
+      "id": "fac_cloud_saas_suitability",
+      "stepKey": "CLOUD_ASSESSMENT",
+      "factorKey": "saas_suitability",
+      "name": "SaaS Suitability",
+      "description": "Assess whether SaaS can meet business and technical needs",
+      "displayOrder": 1
+    },
+    {
+      "id": "fac_cloud_build_vs_buy",
+      "stepKey": "CLOUD_ASSESSMENT",
+      "factorKey": "build_vs_buy_decision",
+      "name": "Build vs Buy Decision",
+      "description": "Evaluate justification for custom build versus product adoption",
+      "displayOrder": 2
+    },
+    {
+      "id": "fac_platform_business_use_case_fit",
+      "stepKey": "PLATFORM_ASSESSMENT",
+      "factorKey": "business_use_case_fit",
+      "name": "Business Use Case Fit",
+      "description": "Assess fit for CRM, case management, workflow, and low-code scenarios",
+      "displayOrder": 1
+    },
+    {
+      "id": "fac_platform_integration_capability",
+      "stepKey": "PLATFORM_ASSESSMENT",
+      "factorKey": "integration_capability",
+      "name": "Integration Capability",
+      "description": "Assess ability to integrate with enterprise core systems",
+      "displayOrder": 2
+    },
+    {
+      "id": "fac_platform_ecosystem_maturity",
+      "stepKey": "PLATFORM_ASSESSMENT",
+      "factorKey": "ecosystem_maturity",
+      "name": "Ecosystem Maturity",
+      "description": "Assess vendor maturity, roadmap stability, and governance readiness",
+      "displayOrder": 3
+    },
+    {
+      "id": "fac_ops_support_model",
+      "stepKey": "OPERATIONAL_CONSIDERATIONS",
+      "factorKey": "operational_support_model",
+      "name": "Operational Support Model",
+      "description": "Assess organizational capability to operate and support selected platform",
+      "displayOrder": 1
+    },
+    {
+      "id": "fac_ops_governance_risk",
+      "stepKey": "OPERATIONAL_CONSIDERATIONS",
+      "factorKey": "governance_and_risk",
+      "name": "Governance and Risk",
+      "description": "Assess security, compliance, and operational risk posture",
+      "displayOrder": 2
+    },
+    {
+      "id": "fac_final_recommendation_synthesis",
+      "stepKey": "FINAL_RECOMMENDATION",
+      "factorKey": "recommendation_synthesis",
+      "name": "Recommendation Synthesis",
+      "description": "Synthesize weighted findings into final platform recommendation",
+      "displayOrder": 1
+    }
+  ],
+  "subFactors": [
+    {
+      "id": "subf_arch_existing_capability_review",
+      "factorId": "fac_arch_common_components",
+      "subFactorKey": "existing_capability_review",
+      "name": "Existing Capability Review",
+      "description": "Review existing capabilities before introducing new components",
+      "displayOrder": 1
+    },
+    {
+      "id": "subf_arch_shared_services_alignment",
+      "factorId": "fac_arch_common_components",
+      "subFactorKey": "shared_services_alignment",
+      "name": "Shared Services Alignment",
+      "description": "Assess fit against approved shared enterprise services",
+      "displayOrder": 2
+    },
+    {
+      "id": "subf_arch_identity_access_management",
+      "factorId": "fac_arch_security",
+      "subFactorKey": "identity_access_management",
+      "name": "Identity and Access Management",
+      "description": "Evaluate IAM model and control alignment",
+      "displayOrder": 1
+    },
+    {
+      "id": "subf_arch_security_controls",
+      "factorId": "fac_arch_security",
+      "subFactorKey": "security_controls",
+      "name": "Security Controls",
+      "description": "Assess required baseline and advanced security controls",
+      "displayOrder": 2
+    },
+    {
+      "id": "subf_cloud_existing_saas_availability",
+      "factorId": "fac_cloud_saas_suitability",
+      "subFactorKey": "existing_saas_availability",
+      "name": "Existing SaaS Availability",
+      "description": "Evaluate available SaaS offerings for current problem domain",
+      "displayOrder": 1
+    },
+    {
+      "id": "subf_cloud_constraints_to_saas_adoption",
+      "factorId": "fac_cloud_saas_suitability",
+      "subFactorKey": "constraints_to_saas_adoption",
+      "name": "Constraints to SaaS Adoption",
+      "description": "Capture legal, integration, sovereignty, and control constraints",
+      "displayOrder": 2
+    },
+    {
+      "id": "subf_cloud_custom_build_justification",
+      "factorId": "fac_cloud_build_vs_buy",
+      "subFactorKey": "custom_build_justification",
+      "name": "Custom Build Justification",
+      "description": "Assess justification where SaaS alternatives exist",
+      "displayOrder": 1
+    },
+    {
+      "id": "subf_cloud_cost_time_constraints",
+      "factorId": "fac_cloud_build_vs_buy",
+      "subFactorKey": "cost_and_time_constraints",
+      "name": "Cost and Time Constraints",
+      "description": "Assess delivery timelines and budget boundaries",
+      "displayOrder": 2
+    },
+    {
+      "id": "subf_platform_crm_case_management_fit",
+      "factorId": "fac_platform_business_use_case_fit",
+      "subFactorKey": "crm_case_management_fit",
+      "name": "CRM / Case Management Fit",
+      "description": "Assess platform fit for CRM and case lifecycle management",
+      "displayOrder": 1
+    },
+    {
+      "id": "subf_platform_workflow_service_management_fit",
+      "factorId": "fac_platform_business_use_case_fit",
+      "subFactorKey": "workflow_service_management_fit",
+      "name": "Workflow and Service Management Fit",
+      "description": "Assess fit for operational workflow and service management",
+      "displayOrder": 2
+    },
+    {
+      "id": "subf_platform_low_code_suitability",
+      "factorId": "fac_platform_business_use_case_fit",
+      "subFactorKey": "low_code_suitability",
+      "name": "Low Code Suitability",
+      "description": "Assess suitability for rapid app composition and citizen development",
+      "displayOrder": 3
+    },
+    {
+      "id": "subf_platform_enterprise_system_integration",
+      "factorId": "fac_platform_integration_capability",
+      "subFactorKey": "enterprise_system_integration",
+      "name": "Enterprise System Integration",
+      "description": "Assess integration with EMPI, registries, identity, and core systems",
+      "displayOrder": 1
+    },
+    {
+      "id": "subf_platform_vendor_maturity_governance_readiness",
+      "factorId": "fac_platform_ecosystem_maturity",
+      "subFactorKey": "vendor_maturity_governance_readiness",
+      "name": "Vendor Maturity and Governance Readiness",
+      "description": "Assess long-term platform maturity and governance fit",
+      "displayOrder": 1
+    },
+    {
+      "id": "subf_ops_internal_support_capability",
+      "factorId": "fac_ops_support_model",
+      "subFactorKey": "internal_support_capability",
+      "name": "Internal Capability to Support Platform",
+      "description": "Assess skills, operating model, and support readiness",
+      "displayOrder": 1
+    },
+    {
+      "id": "subf_ops_security_compliance_operational_risk",
+      "factorId": "fac_ops_governance_risk",
+      "subFactorKey": "security_compliance_operational_risk",
+      "name": "Security, Compliance, and Operational Risk",
+      "description": "Assess compliance obligations and operational exposure",
+      "displayOrder": 1
+    },
+    {
+      "id": "subf_final_platform_recommendation_logic",
+      "factorId": "fac_final_recommendation_synthesis",
+      "subFactorKey": "final_platform_recommendation_logic",
+      "name": "Final Platform Recommendation Logic",
+      "description": "Capture weighted rationale for final recommendation",
+      "displayOrder": 1
+    }
+  ],
+  "questions": [
+    {
+      "questionKey": "Q001",
+      "stepKey": "ARCHITECTURE",
+      "factor": "common_components",
+      "questionText": "Which existing enterprise capabilities can be reused by this solution?",
+      "inputType": "free_text",
+      "sequence": 1,
+      "factorId": "fac_arch_common_components",
+      "subFactorId": "subf_arch_existing_capability_review"
+    },
+    {
+      "questionKey": "Q002",
+      "stepKey": "ARCHITECTURE",
+      "factor": "common_components",
+      "questionText": "How does the solution align to current shared service standards?",
+      "inputType": "free_text",
+      "sequence": 2,
+      "factorId": "fac_arch_common_components",
+      "subFactorId": "subf_arch_shared_services_alignment"
+    },
+    {
+      "questionKey": "Q009",
+      "stepKey": "ARCHITECTURE",
+      "factor": "security",
+      "questionText": "What IAM model (SSO, MFA, RBAC) is required for this solution?",
+      "inputType": "free_text",
+      "sequence": 3,
+      "factorId": "fac_arch_security",
+      "subFactorId": "subf_arch_identity_access_management"
+    },
+    {
+      "questionKey": "Q010",
+      "stepKey": "ARCHITECTURE",
+      "factor": "security",
+      "questionText": "Which mandatory security controls must be implemented at go-live?",
+      "inputType": "free_text",
+      "sequence": 4,
+      "factorId": "fac_arch_security",
+      "subFactorId": "subf_arch_security_controls"
+    },
+    {
+      "questionKey": "CLOUD_SAAS_001",
+      "stepKey": "CLOUD_ASSESSMENT",
+      "factor": "saas_suitability",
+      "questionText": "Which commercial SaaS products currently satisfy at least 80% of core requirements?",
+      "inputType": "free_text",
+      "sequence": 1,
+      "factorId": "fac_cloud_saas_suitability",
+      "subFactorId": "subf_cloud_existing_saas_availability"
+    },
+    {
+      "questionKey": "CLOUD_SAAS_002",
+      "stepKey": "CLOUD_ASSESSMENT",
+      "factor": "saas_suitability",
+      "questionText": "What required capabilities are unavailable in current SaaS offerings?",
+      "inputType": "free_text",
+      "sequence": 2,
+      "factorId": "fac_cloud_saas_suitability",
+      "subFactorId": "subf_cloud_existing_saas_availability"
+    },
+    {
+      "questionKey": "CLOUD_CONSTRAINT_001",
+      "stepKey": "CLOUD_ASSESSMENT",
+      "factor": "saas_suitability",
+      "questionText": "What constraints (regulatory, sovereignty, tenancy, integration) block SaaS adoption?",
+      "inputType": "free_text",
+      "sequence": 3,
+      "factorId": "fac_cloud_saas_suitability",
+      "subFactorId": "subf_cloud_constraints_to_saas_adoption"
+    },
+    {
+      "questionKey": "CLOUD_BUILD_001",
+      "stepKey": "CLOUD_ASSESSMENT",
+      "factor": "build_vs_buy_decision",
+      "questionText": "If custom build is proposed, what differentiating capability justifies it over SaaS?",
+      "inputType": "free_text",
+      "sequence": 4,
+      "factorId": "fac_cloud_build_vs_buy",
+      "subFactorId": "subf_cloud_custom_build_justification"
+    },
+    {
+      "questionKey": "CLOUD_BUILD_002",
+      "stepKey": "CLOUD_ASSESSMENT",
+      "factor": "build_vs_buy_decision",
+      "questionText": "How do implementation timeline and total cost compare between SaaS and custom build options?",
+      "inputType": "free_text",
+      "sequence": 5,
+      "factorId": "fac_cloud_build_vs_buy",
+      "subFactorId": "subf_cloud_cost_time_constraints"
+    },
+    {
+      "questionKey": "PLAT_CRM_001",
+      "stepKey": "PLATFORM_ASSESSMENT",
+      "factor": "business_use_case_fit",
+      "questionText": "Does the use case require advanced CRM and case management capabilities at scale?",
+      "inputType": "free_text",
+      "sequence": 1,
+      "factorId": "fac_platform_business_use_case_fit",
+      "subFactorId": "subf_platform_crm_case_management_fit"
+    },
+    {
+      "questionKey": "PLAT_CRM_002",
+      "stepKey": "PLATFORM_ASSESSMENT",
+      "factor": "business_use_case_fit",
+      "questionText": "What customer engagement and case lifecycle features are mandatory at launch?",
+      "inputType": "free_text",
+      "sequence": 2,
+      "factorId": "fac_platform_business_use_case_fit",
+      "subFactorId": "subf_platform_crm_case_management_fit"
+    },
+    {
+      "questionKey": "PLAT_WORKFLOW_001",
+      "stepKey": "PLATFORM_ASSESSMENT",
+      "factor": "business_use_case_fit",
+      "questionText": "How much of the workload is service workflow, ITSM, or internal operations process automation?",
+      "inputType": "free_text",
+      "sequence": 3,
+      "factorId": "fac_platform_business_use_case_fit",
+      "subFactorId": "subf_platform_workflow_service_management_fit"
+    },
+    {
+      "questionKey": "PLAT_LOWCODE_001",
+      "stepKey": "PLATFORM_ASSESSMENT",
+      "factor": "business_use_case_fit",
+      "questionText": "Is rapid low-code app delivery by business teams a primary requirement?",
+      "inputType": "free_text",
+      "sequence": 4,
+      "factorId": "fac_platform_business_use_case_fit",
+      "subFactorId": "subf_platform_low_code_suitability"
+    },
+    {
+      "questionKey": "PLAT_INT_001",
+      "stepKey": "PLATFORM_ASSESSMENT",
+      "factor": "integration_capability",
+      "questionText": "Which enterprise systems (EMPI, registries, identity, finance) require bi-directional integration?",
+      "inputType": "free_text",
+      "sequence": 5,
+      "factorId": "fac_platform_integration_capability",
+      "subFactorId": "subf_platform_enterprise_system_integration"
+    },
+    {
+      "questionKey": "PLAT_INT_002",
+      "stepKey": "PLATFORM_ASSESSMENT",
+      "factor": "integration_capability",
+      "questionText": "What integration volume, latency, and reliability targets must the platform sustain?",
+      "inputType": "free_text",
+      "sequence": 6,
+      "factorId": "fac_platform_integration_capability",
+      "subFactorId": "subf_platform_enterprise_system_integration"
+    },
+    {
+      "questionKey": "PLAT_ECO_001",
+      "stepKey": "PLATFORM_ASSESSMENT",
+      "factor": "ecosystem_maturity",
+      "questionText": "How important are vendor ecosystem depth, certified partners, and governance tooling?",
+      "inputType": "free_text",
+      "sequence": 7,
+      "factorId": "fac_platform_ecosystem_maturity",
+      "subFactorId": "subf_platform_vendor_maturity_governance_readiness"
+    },
+    {
+      "questionKey": "OPS_SUP_001",
+      "stepKey": "OPERATIONAL_CONSIDERATIONS",
+      "factor": "operational_support_model",
+      "questionText": "Do internal teams have the skills and capacity to operate the selected platform 24x7?",
+      "inputType": "free_text",
+      "sequence": 1,
+      "factorId": "fac_ops_support_model",
+      "subFactorId": "subf_ops_internal_support_capability"
+    },
+    {
+      "questionKey": "OPS_SUP_002",
+      "stepKey": "OPERATIONAL_CONSIDERATIONS",
+      "factor": "operational_support_model",
+      "questionText": "What managed services or partner support model is required for steady-state operations?",
+      "inputType": "free_text",
+      "sequence": 2,
+      "factorId": "fac_ops_support_model",
+      "subFactorId": "subf_ops_internal_support_capability"
+    },
+    {
+      "questionKey": "OPS_RISK_001",
+      "stepKey": "OPERATIONAL_CONSIDERATIONS",
+      "factor": "governance_and_risk",
+      "questionText": "Which compliance controls (privacy, audit, retention) are mandatory for platform approval?",
+      "inputType": "free_text",
+      "sequence": 3,
+      "factorId": "fac_ops_governance_risk",
+      "subFactorId": "subf_ops_security_compliance_operational_risk"
+    },
+    {
+      "questionKey": "FINAL_REC_001",
+      "stepKey": "FINAL_RECOMMENDATION",
+      "factor": "recommendation_synthesis",
+      "questionText": "Based on evidence, which platform best satisfies CRM/case, integration, and governance requirements?",
+      "inputType": "free_text",
+      "sequence": 1,
+      "factorId": "fac_final_recommendation_synthesis",
+      "subFactorId": "subf_final_platform_recommendation_logic"
+    },
+    {
+      "questionKey": "FINAL_REC_002",
+      "stepKey": "FINAL_RECOMMENDATION",
+      "factor": "recommendation_synthesis",
+      "questionText": "What are the top risks, alternatives, and confidence score for the selected platform?",
+      "inputType": "free_text",
+      "sequence": 2,
+      "factorId": "fac_final_recommendation_synthesis",
+      "subFactorId": "subf_final_platform_recommendation_logic"
+    }
+  ]
+}

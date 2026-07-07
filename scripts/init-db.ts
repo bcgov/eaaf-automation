@@ -1,5 +1,5 @@
 import db from "../lib/db/db";
-import { seedEaafHierarchy } from "./seed-questions.ts";
+import { EAAF_QUESTIONS } from "../lib/config/questions.ts";
 
 const initializeDatabase = () => {
   console.log("Initializing database...");
@@ -302,13 +302,106 @@ const initializeDatabase = () => {
     UPDATE assessments SET current_step_id = 'OPERATIONAL_CONSIDERATIONS' WHERE current_step_id = 'BUSINESS_OPS';
   `);
 
-  const seedResult = seedEaafHierarchy(db);
+  // ── Sync question config from eaaf-questions.json ───────────────────────
+  // Uses ON CONFLICT ... DO UPDATE so existing row IDs are preserved.
+  // Questions are never deleted — responses depend on question_id FK.
+  const syncResult = db.transaction(() => {
+    const upsertStep = db.prepare(`
+      INSERT INTO assessment_steps (key, name, sequence, description)
+      VALUES (@key, @name, @sequence, @description)
+      ON CONFLICT(key) DO UPDATE SET
+        name        = excluded.name,
+        sequence    = excluded.sequence,
+        description = excluded.description
+    `);
+
+    const upsertFactor = db.prepare(`
+      INSERT INTO "Factor" (id, stepKey, factorKey, name, description, displayOrder)
+      VALUES (@id, @stepKey, @factorKey, @name, @description, @displayOrder)
+      ON CONFLICT(id) DO UPDATE SET
+        stepKey      = excluded.stepKey,
+        factorKey    = excluded.factorKey,
+        name         = excluded.name,
+        description  = excluded.description,
+        displayOrder = excluded.displayOrder
+    `);
+
+    const upsertSubFactor = db.prepare(`
+      INSERT INTO "SubFactor" (id, factorId, subFactorKey, name, description, displayOrder)
+      VALUES (@id, @factorId, @subFactorKey, @name, @description, @displayOrder)
+      ON CONFLICT(id) DO UPDATE SET
+        factorId     = excluded.factorId,
+        subFactorKey = excluded.subFactorKey,
+        name         = excluded.name,
+        description  = excluded.description,
+        displayOrder = excluded.displayOrder
+    `);
+
+    const getStepId = db.prepare<{ key: string }, { id: number }>(
+      `SELECT id FROM assessment_steps WHERE key = @key`
+    );
+
+    const upsertQuestion = db.prepare(`
+      INSERT INTO questions
+        (step_id, question_key, factor, question_text, input_type, sequence, step_key, factorId, subFactorId)
+      VALUES
+        (@step_id, @question_key, @factor, @question_text, @input_type, @sequence, @step_key, @factorId, @subFactorId)
+      ON CONFLICT(question_key) DO UPDATE SET
+        step_id       = excluded.step_id,
+        factor        = excluded.factor,
+        question_text = excluded.question_text,
+        input_type    = excluded.input_type,
+        sequence      = excluded.sequence,
+        step_key      = excluded.step_key,
+        factorId      = excluded.factorId,
+        subFactorId   = excluded.subFactorId
+    `);
+
+    for (const s of EAAF_QUESTIONS.steps) {
+      upsertStep.run(s);
+    }
+
+    for (const f of EAAF_QUESTIONS.factors) {
+      upsertFactor.run(f);
+    }
+
+    for (const sf of EAAF_QUESTIONS.subFactors) {
+      upsertSubFactor.run(sf);
+    }
+
+    let questionCount = 0;
+    for (const q of EAAF_QUESTIONS.questions) {
+      const step = getStepId.get({ key: q.stepKey });
+      if (!step) {
+        throw new Error(`init-db: question "${q.questionKey}" references unknown stepKey "${q.stepKey}"`);
+      }
+      upsertQuestion.run({
+        step_id:       step.id,
+        question_key:  q.questionKey,
+        factor:        q.factor,
+        question_text: q.questionText,
+        input_type:    q.inputType,
+        sequence:      q.sequence,
+        step_key:      q.stepKey,
+        factorId:      q.factorId,
+        subFactorId:   q.subFactorId,
+      });
+      questionCount++;
+    }
+
+    return {
+      stepCount:      EAAF_QUESTIONS.steps.length,
+      factorCount:    EAAF_QUESTIONS.factors.length,
+      subFactorCount: EAAF_QUESTIONS.subFactors.length,
+      questionCount,
+    };
+  })();
 
   console.log("✓ Database tables created successfully");
-  console.log(`✓ Seeded ${seedResult.stepCount} assessment steps`);
-  console.log(`✓ Seeded ${seedResult.factorCount} factors`);
-  console.log(`✓ Seeded ${seedResult.subFactorCount} sub-factors`);
-  console.log(`✓ Seeded ${seedResult.questionCount} questions`);
+  console.log(`✓ Synced ${syncResult.stepCount} assessment steps from config`);
+  console.log(`✓ Synced ${syncResult.factorCount} factors from config`);
+  console.log(`✓ Synced ${syncResult.subFactorCount} sub-factors from config`);
+  console.log(`✓ Synced ${syncResult.questionCount} questions from config`);
 };
 
 initializeDatabase();

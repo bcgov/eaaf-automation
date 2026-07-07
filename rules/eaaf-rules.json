@@ -7,6 +7,66 @@
     "scoringRules": {
       "_comment": "Section 3 – Each rule generates an Assessment Signal with Response Evidence, Interpretation, Why It Matters, and Platform Impact",
 
+      "Q001": [
+        {
+          "concept": "Existing ServiceNow or ITSM Capability Reuse",
+          "description": "The assessment identifies existing ServiceNow or ITSM tooling as a reusable enterprise component.",
+          "whyItMatters": "Reusing an existing ITSM platform reduces procurement risk, accelerates delivery, and avoids duplicate tooling across the enterprise.",
+          "keywords": ["servicenow", "itsm", "service desk", "incident management tool", "existing service management"],
+          "scores": { "ServiceNow": 7 }
+        },
+        {
+          "concept": "Existing Microsoft M365 or Power Platform Capability Reuse",
+          "description": "The assessment identifies existing M365, SharePoint, Teams, or Power Platform components as reusable.",
+          "whyItMatters": "Reusing licensed M365 components eliminates incremental procurement and aligns the solution with the existing BC Government platform investment.",
+          "keywords": ["m365", "microsoft 365", "sharepoint", "power platform", "power apps", "power automate", "teams"],
+          "scores": { "MicrosoftPowerPlatform": 7 }
+        },
+        {
+          "concept": "Existing Salesforce or CRM Capability Reuse",
+          "description": "The assessment identifies existing Salesforce or CRM tooling as a reusable enterprise component.",
+          "whyItMatters": "Reusing an existing CRM platform reduces onboarding cost, leverages established data models, and avoids parallel citizen-engagement systems.",
+          "keywords": ["salesforce", "crm", "customer relationship management platform", "existing crm"],
+          "scores": { "Salesforce": 7 }
+        },
+        {
+          "concept": "No Reusable Enterprise Components Identified",
+          "description": "The assessment indicates no existing enterprise capabilities can be reused, suggesting a greenfield build.",
+          "whyItMatters": "Absence of reusable components increases delivery risk and cost — a strong business case is required before selecting a custom build path.",
+          "keywords": ["no existing", "greenfield", "start from scratch", "nothing reusable", "no reusable"],
+          "scores": { "CustomBuild": 3 }
+        }
+      ],
+      "Q002": [
+        {
+          "concept": "Microsoft M365 Shared Service Standard Alignment",
+          "description": "The assessment confirms the solution aligns to the BC Government M365 shared service standard.",
+          "whyItMatters": "Alignment to M365 shared service standards supports Power Platform adoption under existing licensing, avoids procurement overhead, and reduces shadow IT risk.",
+          "keywords": ["m365 standard", "microsoft standard", "sharepoint standard", "teams standard", "m365 shared service"],
+          "scores": { "MicrosoftPowerPlatform": 6 }
+        },
+        {
+          "concept": "ServiceNow ITSM Shared Service Standard Alignment",
+          "description": "The assessment confirms the solution aligns to the BC Government ServiceNow ITSM shared service standard.",
+          "whyItMatters": "Alignment to the BC Government ITSM standard reduces evaluation overhead, supports existing enterprise licensing, and signals a well-understood operational model.",
+          "keywords": ["servicenow standard", "itsm standard", "itsm shared service", "bc government itsm"],
+          "scores": { "ServiceNow": 6 }
+        },
+        {
+          "concept": "Salesforce Shared Service Standard Alignment",
+          "description": "The assessment confirms the solution aligns to an established Salesforce or CRM shared service standard.",
+          "whyItMatters": "Alignment to an existing CRM shared service standard supports platform reuse, reduces procurement complexity, and signals established governance patterns.",
+          "keywords": ["salesforce standard", "crm standard", "salesforce shared service"],
+          "scores": { "Salesforce": 6 }
+        },
+        {
+          "concept": "Non-Standard or No Shared Service Alignment",
+          "description": "The assessment indicates the solution does not align to current enterprise shared service standards.",
+          "whyItMatters": "Absence of shared service alignment increases governance risk and may require ARB exception approval — a detailed justification is recommended.",
+          "keywords": ["not aligned", "no alignment", "does not align", "non-standard", "outside shared service"],
+          "scores": { "CustomBuild": 2, "ServiceNow": -2, "MicrosoftPowerPlatform": -2 }
+        }
+      ],
       "Q009": [
         {
           "concept": "ITSM Role Architecture",

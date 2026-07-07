@@ -199,14 +199,14 @@ The root record. One row per assessment.
 ---
 
 #### `assessment_steps`, `Factor`, `SubFactor`, `questions`
-Seeded from `seed-data/seed-questions.local.json`. Define the question hierarchy. Never written to at runtime.
+Auto-synced from `rules/eaaf-questions.json` on every `npm run db:init`. Define the question hierarchy. Never written to at runtime.
 
 | Table | Purpose |
 |---|---|
-| `assessment_steps` | 4 evaluation stages (Architecture, Cloud, Platform, Operational) + Final Recommendation |
+| `assessment_steps` | 5 evaluation stages (Architecture, Cloud Assessment, Platform Assessment, Operational Considerations, Final Recommendation) |
 | `Factor` | Named evaluation factors within each stage |
 | `SubFactor` | Sub-factors within each factor |
-| `questions` | Individual questions with `question_key` used for scoring rule lookup |
+| `questions` | Individual questions with stable `question_key` used for scoring rule lookup and response FK anchoring |
 
 ---
 

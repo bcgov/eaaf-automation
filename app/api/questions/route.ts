@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import db from "@/lib/db/db";
+import { getQuestionsForStep } from "@/lib/config/questions";
+import type { StepKey } from "@/types/assessment";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -9,12 +10,15 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "step parameter required" }, { status: 400 });
   }
 
-  const questions = db
-    .prepare(
-      `SELECT id, question_key, question_text, factor, help_text, input_type, sequence
-       FROM questions WHERE step_key = ? ORDER BY sequence`
-    )
-    .all(step);
+  const questions = getQuestionsForStep(step as StepKey).map((q) => ({
+    id:            q.sequence,
+    question_key:  q.questionKey,
+    question_text: q.questionText,
+    factor:        q.factor,
+    help_text:     null,
+    input_type:    q.inputType,
+    sequence:      q.sequence,
+  }));
 
   return NextResponse.json(questions);
 }

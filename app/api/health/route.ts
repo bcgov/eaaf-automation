@@ -41,7 +41,6 @@ function checkDbInitialized(): HealthCheck {
         summary: `Missing required tables: ${missing.join(", ")}`,
         fix: [
           "Run: npm run db:init",
-          "Confirm seed file exists: seed-data/seed-questions.local.json",
           "If first-time setup, run: .\\setup-dev.ps1",
         ],
       };
@@ -59,7 +58,6 @@ function checkDbInitialized(): HealthCheck {
         details: `questions=${questions.c}, steps=${steps.c}`,
         fix: [
           "Run: npm run db:init",
-          "Verify: seed-data/seed-questions.local.json is present",
           "Re-run setup: .\\setup-dev.ps1",
         ],
       };
@@ -90,23 +88,22 @@ function checkDbInitialized(): HealthCheck {
 
 function checkSeedFiles(): HealthCheck {
   const root = process.cwd();
-  const requiredSeed = path.join(root, "seed-data", "seed-questions.local.json");
+  const questionConfig = path.join(root, "rules", "eaaf-questions.json");
   const optionalSeed = path.join(root, "seed-data", "assessments-seed.local.json");
 
-  const hasRequired = fs.existsSync(requiredSeed);
+  const hasConfig = fs.existsSync(questionConfig);
   const hasOptional = fs.existsSync(optionalSeed);
 
-  if (!hasRequired) {
+  if (!hasConfig) {
     return {
       id: "seed",
-      label: "Seed data files",
+      label: "Question config",
       status: "fail",
-      summary: "Required seed file is missing.",
-      details: "seed-data/seed-questions.local.json not found",
+      summary: "rules/eaaf-questions.json is missing.",
+      details: "This file is tracked in git and should always be present.",
       fix: [
-        "Request from team lead: seed-data/seed-questions.local.json",
-        "Place it under: seed-data/",
-        "Run: npm run db:init",
+        "Run: git status — check for accidental deletion",
+        "Run: git checkout rules/eaaf-questions.json",
       ],
     };
   }
@@ -114,9 +111,9 @@ function checkSeedFiles(): HealthCheck {
   if (!hasOptional) {
     return {
       id: "seed",
-      label: "Seed data files",
+      label: "Question config",
       status: "warn",
-      summary: "Required seed exists; historical seed file is missing (optional).",
+      summary: "Question config present. Historical seed file is missing (optional).",
       details: "Optional file missing: seed-data/assessments-seed.local.json",
       fix: [
         "Optional: request seed-data/assessments-seed.local.json from team",
@@ -127,9 +124,9 @@ function checkSeedFiles(): HealthCheck {
 
   return {
     id: "seed",
-    label: "Seed data files",
+    label: "Question config",
     status: "pass",
-    summary: "Required and optional seed files are present.",
+    summary: "Question config and optional historical seed are present.",
     fix: [],
   };
 }

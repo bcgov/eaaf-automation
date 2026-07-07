@@ -48,9 +48,45 @@ The final report produced at Stage 5 includes:
 
 ---
 
-## Configuring the Scoring Rules
+## Configuring Questions and Scoring Rules
 
-The platform recommendation logic is driven by a single configuration file:
+The question hierarchy and platform recommendation logic are each driven by a tracked configuration file — no code changes needed for most adjustments.
+
+### `rules/eaaf-questions.json`
+
+Defines the complete question hierarchy: 5 assessment steps, 10 factors, 16 sub-factors, and 21 questions. Each question has a stable `questionKey` that links it to scoring rules and stored responses.
+
+This file is committed to git. Any developer who clones the repo and runs `npm run db:init` gets all questions automatically — no seed file required.
+
+To add a new question: add an entry to `questions[]` with a unique `questionKey`, then run `npm run db:init`. Add a matching entry in `rules/eaaf-rules.json` under `platformRules.scoringRules` to include it in scoring.
+
+---
+
+## Question Change Policy
+
+### What is safe to change
+
+**Question text** (`questionText` in `rules/eaaf-questions.json`) can be updated freely. The stable `questionKey` links a question to its stored responses — the display text is cosmetic.
+
+### What requires caution
+
+If questions are **added, removed, restructured, reordered**, or if **scoring rules change significantly**:
+
+- Existing **draft assessments** may no longer align with the current assessment model.
+- Users should **restart draft assessments** after significant changes to the question set or scoring logic.
+- **Completed assessments** remain permanent historical records and are not affected.
+- Completed assessments are **not automatically rescored** — they reflect the model at the time they were completed.
+- If a user wants results based on the latest model, they should **create a new assessment** or explicitly reassess.
+
+### The most important safety rule
+
+> **DO NOT DELETE QUESTION ROWS FROM SQLITE.**
+
+`responses.question_id` is a hard foreign key to `questions.id`. Deleting a question row orphans all responses for that question and breaks historical reports. If a question is removed from `rules/eaaf-questions.json`, `db:init` preserves its SQLite row — the question stops appearing in the active questionnaire but all historical response data remains intact.
+
+See [README-DB.md](README-DB.md) for the full database design and FK constraints.
+
+---
 
 ### `rules/eaaf-rules.json`
 
@@ -143,7 +179,7 @@ A: The architect confirms or overrides the recommendation in Section 10 (Final R
 
 ## Developer Setup
 
-If you are setting up a local development environment, see **[SETUP.md](SETUP.md)**.
+If you are setting up a local development environment, see **[README-SETUP.md](README-SETUP.md)**.
 
 Start from the `main` branch:
 **https://github.com/ghsansin/eaaf-automation/tree/main**
@@ -156,11 +192,19 @@ git pull origin main
 git checkout -b feature/your-branch-name
 ```
 
+**First-time setup** — clone the repo and run one command:
+
+```powershell
+.\setup-dev.ps1
+```
+
+All question data loads automatically from `rules/eaaf-questions.json`. No seed files to request from the team lead.
+
 ---
 
 ## Support
 
-1. For setup issues, follow the step-by-step guide in [SETUP.md](SETUP.md)
+1. For setup issues, follow the step-by-step guide in [README-SETUP.md](README-SETUP.md)
 2. For team-specific configuration (seed data, API keys), contact your team lead
 3. GitHub Issues: https://github.com/ghsansin/eaaf-automation/issues
 
