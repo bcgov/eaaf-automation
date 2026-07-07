@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
  *   AUTH_USERNAME=your-username
  *   AUTH_PASSWORD=your-password
  */
-export function proxy(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const username = process.env.AUTH_USERNAME;
   const password = process.env.AUTH_PASSWORD;
 

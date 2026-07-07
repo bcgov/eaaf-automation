@@ -409,3 +409,10 @@ The authoritative source for scoring rules, platform display names, confidence t
 | `similarity` | Stop words, category weights, lexical fallback narratives |
 
 **To add a new scoring concept:** Add a new entry under `platformRules.scoringRules[questionKey]` with `concept`, `description`, `whyItMatters`, `keywords`, and `scores`.
+THIS FILE ACTS AS as a 
+Decision engine.
+Knowledge base.
+Report content repository.
+Confidence framework.
+Historical similarity configuration.
+Recommendation generation template library
