@@ -53,6 +53,7 @@ export default function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Exclude all Next.js internals (static assets, images, HMR WebSocket, etc.)
-  matcher: ["/((?!_next/|favicon.ico).*)"],
+  // Exclude Next.js internals (static assets, HMR WebSocket, etc.)
+  // Handles both bare paths (_next/...) and basePath-prefixed paths (eaaf-automation/_next/...)
+  matcher: ["/((?!(?:eaaf-automation/)?_next/|favicon.ico).*)"],
 };

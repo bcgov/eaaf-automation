@@ -3,10 +3,10 @@ import type { NextConfig } from "next";
 // Single source of truth — basePath and NEXT_PUBLIC_BASE_PATH are always in sync
 const APP_BASE_PATH = "/eaaf-automation";
 
-// Set TUNNEL_ORIGIN in .env.local when using Cloudflare tunnel (comma-separated if multiple)
-// Example: TUNNEL_ORIGIN=my-tunnel-abc123.trycloudflare.com
-// Update this each time the tunnel URL changes (trycloudflare URLs are ephemeral)
-const tunnelOrigins: string[] = (process.env.TUNNEL_ORIGIN ?? "")
+// *.trycloudflare.com is always allowed — ephemeral tunnel URLs change every session
+// so wildcarding the whole domain avoids needing to update TUNNEL_ORIGIN each time.
+// Add TUNNEL_ORIGIN in .env.local only if you use a non-trycloudflare tunnel.
+const extraOrigins: string[] = (process.env.TUNNEL_ORIGIN ?? "")
   .split(",")
   .map((h) => h.trim())
   .filter(Boolean);
@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
 
   // Allow Next.js dev server to accept requests from tunnel hostnames.
   // Without this, Next 15+ (Turbopack) blocks cross-origin HMR and API requests.
-  ...(tunnelOrigins.length > 0 && { allowedDevOrigins: tunnelOrigins }),
+  allowedDevOrigins: ["*.trycloudflare.com", ...extraOrigins],
 };
 
 export default nextConfig;
