@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
     Complete local development setup for EAAF Automation
@@ -230,7 +230,7 @@ if (-not $SkipEmbeddings) {
         } else {
             Write-Host "  WARNING Embedding service did not respond within $maxWait seconds" -ForegroundColor Yellow
             Write-Host "  Check log: local-embedding-service\embedding-service.log" -ForegroundColor Yellow
-            Write-Host "  App will still start — run 'npm run embeddings:service' manually if needed" -ForegroundColor Gray
+            Write-Host "  App will still start - run 'npm run embeddings:service' manually if needed" -ForegroundColor Gray
         }
     } else {
         Write-Host "  WARNING Python or venv not available - skipping embedding service" -ForegroundColor Yellow
