@@ -196,15 +196,16 @@ if (-not $SkipEmbeddings) {
 
         Write-Host "  Starting embedding service on http://127.0.0.1:8001" -ForegroundColor Cyan
 
-        $logFile = Join-Path $PWD "local-embedding-service\embedding-service.log"
+        $logFile    = Join-Path $PWD "local-embedding-service\embedding-service.log"
+        $logFileErr = Join-Path $PWD "local-embedding-service\embedding-service-error.log"
         $embeddingProcess = Start-Process -FilePath $venvPython `
             -ArgumentList "local-embedding-service/app.py" `
             -NoNewWindow `
             -RedirectStandardOutput $logFile `
-            -RedirectStandardError $logFile `
+            -RedirectStandardError $logFileErr `
             -PassThru
 
-        Write-Host "  Waiting for embedding service to be ready (log: local-embedding-service\embedding-service.log)..." -ForegroundColor Cyan
+        Write-Host "  Waiting for embedding service to be ready (log: local-embedding-service\embedding-service.log / embedding-service-error.log)..." -ForegroundColor Cyan
 
         $maxWait = 45
         $waited = 0
@@ -229,7 +230,7 @@ if (-not $SkipEmbeddings) {
             Write-Host "    To stop: Stop-Process -Id $($embeddingProcess.Id)" -ForegroundColor Gray
         } else {
             Write-Host "  WARNING Embedding service did not respond within $maxWait seconds" -ForegroundColor Yellow
-            Write-Host "  Check log: local-embedding-service\embedding-service.log" -ForegroundColor Yellow
+            Write-Host "  Check logs: local-embedding-service\embedding-service.log / embedding-service-error.log" -ForegroundColor Yellow
             Write-Host "  App will still start - run 'npm run embeddings:service' manually if needed" -ForegroundColor Gray
         }
     } else {
