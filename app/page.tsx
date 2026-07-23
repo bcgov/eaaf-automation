@@ -9,11 +9,6 @@ import styles from "./page.module.css";
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const PAGE_SIZE = 6;
 
-// True when accessed through an external tunnel (not localhost)
-const isTunnelAccess = typeof window !== "undefined"
-  ? !window.location.hostname.startsWith("localhost") && !window.location.hostname.startsWith("127.")
-  : false;
-
 const STEP_DISPLAY: Record<string, string> = {
   ARCHITECTURE: "Architecture",
   CLOUD_ASSESSMENT: "Cloud",
@@ -42,6 +37,12 @@ export default function HomePage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isTunnelAccess, setIsTunnelAccess] = useState(false);
+
+  React.useEffect(() => {
+    const host = window.location.hostname;
+    setIsTunnelAccess(!host.startsWith("localhost") && !host.startsWith("127."));
+  }, []);
 
   React.useEffect(() => {
     loadAssessments();
@@ -165,6 +166,14 @@ export default function HomePage() {
     <div className={styles.appShell}>
       {sidebar}
       <main className={styles.mainContent}>
+
+        {/* ── Tunnel read-only banner ───────────────────────────────────── */}
+        {isTunnelAccess && (
+          <div className={styles.tunnelBanner}>
+            <span>⚠</span>
+            <span>External access — completed assessments are read-only and cannot be edited or regenerated via this link.</span>
+          </div>
+        )}
 
         {/* ── Hero ──────────────────────────────────────────────────────── */}
         <div className={styles.heroSection}>

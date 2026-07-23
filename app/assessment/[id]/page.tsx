@@ -55,6 +55,12 @@ export default function AssessmentPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [contextSaving, setContextSaving] = useState(false);
+  const [isTunnelAccess, setIsTunnelAccess] = useState(false);
+
+  useEffect(() => {
+    const host = window.location.hostname;
+    setIsTunnelAccess(!host.startsWith("localhost") && !host.startsWith("127."));
+  }, []);
   const [selectedQIdx, setSelectedQIdx] = useState(0);
   const [qSearch, setQSearch] = useState("");
 
@@ -257,6 +263,14 @@ export default function AssessmentPage({ params }: { params: Promise<{ id: strin
         </div>
         {saving && <span className={styles.savingIndicator}>Saving…</span>}
       </div>
+
+      {/* Read-only tunnel banner — shown on completed assessments via external access */}
+      {isTunnelAccess && assessment.status === "completed" && (
+        <div className={styles.tunnelBanner}>
+          <span>⚠</span>
+          <span>Read-only — this completed assessment cannot be edited or regenerated via external access.</span>
+        </div>
+      )}
 
       {/* Step progress bar */}
       <div className={styles.progressBar}>

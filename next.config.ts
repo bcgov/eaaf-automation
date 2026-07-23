@@ -22,7 +22,14 @@ const nextConfig: NextConfig = {
 
   // Allow Next.js dev server to accept requests from tunnel hostnames.
   // Without this, Next 15+ (Turbopack) blocks cross-origin HMR and API requests.
-  allowedDevOrigins: ["*.trycloudflare.com", ...extraOrigins],
+  allowedDevOrigins: [
+    "*.trycloudflare.com",  // Cloudflare ephemeral tunnels
+    "*.ngrok-free.app",     // ngrok free tier
+    "*.ngrok-free.dev",     // ngrok free tier (alt domain)
+    "*.ngrok.app",          // ngrok paid
+    "*.ngrok.io",           // ngrok legacy
+    ...extraOrigins,
+  ],
 };
 
 export default nextConfig;

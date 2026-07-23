@@ -485,3 +485,72 @@ POST .../innovative-solutions	Re-run AI innovations
 POST /api/response/save	Save any answer
 
 Delete those once the functionality is no longer required.
+
+### IF USING NGROK
+## Install ngrok
+
+Download ngrok:
+
+https://ngrok.com/download
+
+Verify installation:
+
+```powershell
+ngrok version
+```
+
+
+## Configure ngrok Authentication
+
+Create a free ngrok account:
+
+https://dashboard.ngrok.com/signup
+
+Get the authentication token from:
+
+https://dashboard.ngrok.com/get-started/your-authtoken
+
+
+Add the token:
+
+```powershell
+ngrok config add-authtoken YOUR_TOKEN_HERE
+```
+
+
+This only needs to be done once per development machine.
+
+
+## Start the Application
+
+Start the EAAF Automation application:
+
+```powershell
+npm run dev
+## 2. Start ngrok Tunnel
+
+Open a new terminal window.
+
+Run:
+
+```powershell
+ngrok http 3000
+```
+
+ngrok will display a new public URL:
+
+Example:
+
+```
+Forwarding https://example-name.ngrok-free.dev -> http://localhost:3000
+```
+
+Use the HTTPS URL:
+
+```
+https://example-name.ngrok-free.dev/eaaf-automation
+```
+
+## Important
+
+The ngrok URL changes every time ngrok is restarted on the free plan
